@@ -13,6 +13,7 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "Paymint | Web3-Native Payroll & Finance",
   description: "The Future of Work Finance on Solana",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -23,9 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <GlobalProvider>
-          {children}
-        </GlobalProvider>
+        <GlobalProvider>{children}</GlobalProvider>
       </body>
     </html>
   )

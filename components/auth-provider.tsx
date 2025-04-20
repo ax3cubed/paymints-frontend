@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         embeddedWallets: {
           requireUserPasswordOnCreate: false,
           showWalletUIs: true,
-           
-            createOnLogin: "users-without-wallets",
+
+          createOnLogin: "users-without-wallets",
         },
         mfa: {
           noPromptOnMfaRequired: false,
@@ -94,7 +94,7 @@ function AuthProviderInner({ children }: { children: React.ReactNode }) {
 
         // Get the Solana wallet address if available
         const solanaWallet = user.wallet
-        
+
         setWalletAddress(solanaWallet?.address || null)
       } else {
         // Clear user data if not authenticated

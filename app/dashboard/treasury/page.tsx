@@ -20,9 +20,8 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Bar, BarChart, Line, LineChart, Pie, PieChart } from "recharts"
-import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { type ChartConfig, ChartContainer } from "@/components/ui/chart"
 import { ArrowUpRight, CheckCircle2, Plus } from "lucide-react"
-
 
 export default function TreasuryDashboard() {
   const [isAllocateOpen, setIsAllocateOpen] = useState(false)
@@ -64,7 +63,6 @@ export default function TreasuryDashboard() {
       color: "#8b5cf6",
     },
   } satisfies ChartConfig
-
 
   const barChartData = [
     { name: "USDC", value: 6500 },
@@ -340,11 +338,7 @@ export default function TreasuryDashboard() {
             <div className="h-80">
               <ChartContainer config={barChartConfig} className="h-full w-full">
                 <BarChart data={barChartData}>
-                  <Bar
-                    dataKey="value"
-                    fill="var(--color-value)"
-                    radius={[4, 4, 0, 0]}
-                  />
+                  <Bar dataKey="value" fill="var(--color-value)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ChartContainer>
             </div>

@@ -7,9 +7,6 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -47,6 +44,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAtom } from "jotai"
 import { isAuthenticatedAtom, isLoadingAtom, walletAddressAtom } from "@/lib/atoms"
+import { SidebarMenu } from "@/components/sidebar"
 
 export default function DashboardLayout({
   children,
@@ -141,18 +139,7 @@ export default function DashboardLayout({
             <SidebarGroup>
               <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                        <Link href={item.href}>
-                          <item.icon className="h-5 w-5" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
+               <SidebarMenu/>
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
