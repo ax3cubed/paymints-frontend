@@ -9,16 +9,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { DatePickerWithRange } from "@/components/date-range-picker"
 import { addDays } from "date-fns"
-import { ArrowUpRight, Download, PieChart, BarChartIcon, LineChartIcon, Calendar } from "lucide-react"
-import { Bar, BarChart, Cell, Line, LineChart, Pie, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { ArrowUpRight, Download, BarChartIcon, LineChartIcon, Calendar } from "lucide-react"
+import { Bar, BarChart, Cell, Line, LineChart,PieChart, Pie, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { DateRange } from "react-day-picker"
 
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState({
     from: addDays(new Date(), -30),
     to: new Date(),
   })
-
+  const handleDateRangeChange = (date: DateRange | undefined) => {
+    if (date) {
+      setDateRange({
+        from: date.from ?? addDays(new Date(), -30),
+        to: date.to ?? new Date(),
+      });
+    }
+  }
   // Mock data for charts
   const spendingData = [
     { name: "Jan", value: 1200 },
@@ -108,7 +116,7 @@ export default function AnalyticsPage() {
           <p className="text-muted-foreground">Track your financial performance and spending patterns</p>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          <DatePickerWithRange date={dateRange} setDate={handleDateRangeChange} />
           <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export
@@ -227,30 +235,34 @@ export default function AnalyticsPage() {
 
               <TabsContent value="line" className="h-80">
                 <ChartContainer config={spendingChartConfig} className="h-full w-full">
-                  <LineChart data={spendingData}>
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="var(--color-value)"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: "var(--color-value)", strokeWidth: 0 }}
-                      activeDot={{ r: 6, fill: "var(--color-value)", strokeWidth: 0 }}
-                    />
-                  </LineChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={spendingData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="var(--color-value)"
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: "var(--color-value)", strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: "var(--color-value)", strokeWidth: 0 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               </TabsContent>
 
               <TabsContent value="bar" className="h-80">
                 <ChartContainer config={spendingChartConfig} className="h-full w-full">
-                  <BarChart data={spendingData}>
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="var(--color-value)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={spendingData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="var(--color-value)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               </TabsContent>
             </Tabs>
@@ -273,23 +285,25 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="h-64 mb-6">
                 <ChartContainer config={categoryChartConfig} className="h-full w-full">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      nameKey="name"
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={Object.values(categoryChartConfig)[index].color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        nameKey="name"
+                        dataKey="value"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={Object.values(categoryChartConfig)[index].color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               </div>
 
@@ -323,16 +337,18 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="h-64 mb-6">
                 <ChartContainer config={invoiceChartConfig} className="h-full w-full">
-                  <BarChart data={invoiceData} layout="vertical">
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={80} />
-                    <Tooltip />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {invoiceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={Object.values(invoiceChartConfig)[index].color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={invoiceData} layout="vertical">
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={80} />
+                      <Tooltip />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {invoiceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={Object.values(invoiceChartConfig)[index].color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               </div>
 

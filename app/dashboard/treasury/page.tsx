@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Bar, BarChart, Line, LineChart, Pie, PieChart } from "recharts"
+import { Bar, BarChart, Line, LineChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart"
 import { ArrowUpRight, CheckCircle2, Plus } from "lucide-react"
 
@@ -236,18 +236,20 @@ export default function TreasuryDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="h-64 flex items-center justify-center">
                 <ChartContainer config={pieChartConfig} className="h-full w-full">
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      nameKey="name"
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    />
-                  </PieChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        nameKey="name"
+                        dataKey="value"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               </div>
               <div className="space-y-4">
@@ -308,16 +310,32 @@ export default function TreasuryDashboard() {
           <CardContent>
             <div className="h-80">
               <ChartContainer config={lineChartConfig} className="h-full w-full">
-                <LineChart data={lineChartData}>
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--color-value)"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: "var(--color-value)", strokeWidth: 0 }}
-                    activeDot={{ r: 6, fill: "var(--color-value)", strokeWidth: 0 }}
-                  />
-                </LineChart>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={lineChartData}>
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="var(--color-value)"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "var(--color-value)", strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: "var(--color-value)", strokeWidth: 0 }}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </ChartContainer>
             </div>
           </CardContent>
@@ -337,9 +355,25 @@ export default function TreasuryDashboard() {
           <CardContent>
             <div className="h-80">
               <ChartContainer config={barChartConfig} className="h-full w-full">
-                <BarChart data={barChartData}>
-                  <Bar dataKey="value" fill="var(--color-value)" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData}>
+                    <Bar dataKey="value" fill="var(--color-value)" radius={[4, 4, 0, 0]} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </ChartContainer>
             </div>
           </CardContent>
