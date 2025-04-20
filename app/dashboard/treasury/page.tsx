@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,8 +19,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { LineChart, PieChart } from "@/components/ui/chart"
+import { Bar, BarChart, Line, LineChart, Pie, PieChart } from "recharts"
+import { ChartConfig, ChartContainer } from "@/components/ui/chart"
 import { ArrowUpRight, CheckCircle2, Plus } from "lucide-react"
+
 
 export default function TreasuryDashboard() {
   const [isAllocateOpen, setIsAllocateOpen] = useState(false)
@@ -34,6 +36,20 @@ export default function TreasuryDashboard() {
     { name: "Liquidity Pool", value: 10, fill: "#14b8a6" },
   ]
 
+  const pieChartConfig = {
+    USDC: {
+      label: "USDC",
+      color: "#8b5cf6",
+    },
+    "Yield Strategies": {
+      label: "Yield Strategies",
+      color: "#6366f1",
+    },
+    "Liquidity Pool": {
+      label: "Liquidity Pool",
+      color: "#14b8a6",
+    },
+  } satisfies ChartConfig
   const lineChartData = [
     { name: "Jan", value: 4.2 },
     { name: "Feb", value: 4.5 },
@@ -42,6 +58,13 @@ export default function TreasuryDashboard() {
     { name: "May", value: 5.9 },
     { name: "Jun", value: 6.2 },
   ]
+  const lineChartConfig = {
+    value: {
+      label: "APY %",
+      color: "#8b5cf6",
+    },
+  } satisfies ChartConfig
+
 
   const barChartData = [
     { name: "USDC", value: 6500 },
@@ -49,6 +72,12 @@ export default function TreasuryDashboard() {
     { name: "Liquidity", value: 1000 },
   ]
 
+  const barChartConfig = {
+    value: {
+      label: "Amount (USD)",
+      color: "#8b5cf6",
+    },
+  } satisfies ChartConfig
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -208,14 +237,20 @@ export default function TreasuryDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="h-64 flex items-center justify-center">
-                <PieChart
-                  data={pieChartData}
-                  index="name"
-                  category="value"
-                  colors={pieChartData.map((d) => d.fill)}
-                  valueFormatter={(value) => `${value}%`}
-                  className="h-full w-full"
-                />
+                <ChartContainer config={pieChartConfig} className="h-full w-full">
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      nameKey="name"
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    />
+                  </PieChart>
+                </ChartContainer>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -274,15 +309,44 @@ export default function TreasuryDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <LineChart
-                data={lineChartData}
-                index="name"
-                categories={["value"]}
-                colors={["#8b5cf6"]}
-                valueFormatter={(value) => `${value}%`}
-                yAxisWidth={40}
-                className="h-full w-full"
-              />
+              <ChartContainer config={lineChartConfig} className="h-full w-full">
+                <LineChart data={lineChartData}>
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="var(--color-value)"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: "var(--color-value)", strokeWidth: 0 }}
+                    activeDot={{ r: 6, fill: "var(--color-value)", strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+      {/* Asset Distribution Bar Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.45 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Asset Distribution</CardTitle>
+            <CardDescription>Breakdown of treasury allocation in USD</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ChartContainer config={barChartConfig} className="h-full w-full">
+                <BarChart data={barChartData}>
+                  <Bar
+                    dataKey="value"
+                    fill="var(--color-value)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
             </div>
           </CardContent>
         </Card>
