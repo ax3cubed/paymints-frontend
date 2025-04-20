@@ -18,7 +18,7 @@ interface GlobalProviderProps {
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
     return (
         <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
                 <AuthGuard>
                     <SidebarProvider >
                         {children}

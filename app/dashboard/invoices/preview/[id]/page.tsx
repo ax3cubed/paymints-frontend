@@ -71,7 +71,19 @@ export default function InvoicePreviewPage({ params }: { params: { id: string } 
   }
 
   const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
+    documentTitle: `Invoice-${invoice.number}`,
+    onAfterPrint: () => {
+      toast({
+        title: "Invoice Printed",
+        description: "Your invoice has been sent to the printer.",
+      })
+    },
+    removeAfterPrint: true,
+    pageStyle: "print",
+    // @ts-ignore
+
+    contentRef: () => invoiceRef.current,
+    onBeforeGetContent: () => Promise.resolve(),
   })
 
   const copyToClipboard = (text: string) => {
@@ -113,7 +125,7 @@ export default function InvoicePreviewPage({ params }: { params: { id: string } 
           </div>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline" onClick={handlePrint}>
+          <Button variant="outline" onClick={() => handlePrint()}>
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>

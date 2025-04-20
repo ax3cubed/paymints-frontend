@@ -89,7 +89,7 @@ export default function LandingPage() {
   }, [testimonials.length])
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex justify-center items-center flex-col w-full ">
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -143,7 +143,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 relative overflow-hidden">
+      <section className="pt-32 pb-20 relative overflow-hidden ">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-background z-10"></div>
           <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-3xl"></div>
