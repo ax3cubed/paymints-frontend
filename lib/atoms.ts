@@ -1,26 +1,26 @@
-import type React from "react"
-import { atom } from "jotai"
-import type { User } from "@privy-io/react-auth"
+"use client";
 
-// Auth atoms
-export const userAtom = atom<User | null>(null)
-export const isAuthenticatedAtom = atom<boolean>(false)
-export const isLoadingAtom = atom<boolean>(true)
-export const walletAddressAtom = atom<string | null>(null)
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+import type { Address } from "@solana/kit";
 
-// UI state atoms
-export const sidebarCollapsedAtom = atom<boolean>(false)
-export const currentThemeAtom = atom<"light" | "dark" | "system">("dark")
+// Auth & Wallet Atoms
+export const walletAddressAtom = atomWithStorage<Address | null>("walletAddress", null);
+export const isAuthenticatedAtom = atomWithStorage<boolean>("isAuthenticated", false);
+export const isLoadingAtom = atom<boolean>(true);
 
-// Application state atoms
-export const balanceAtom = atom<number>(0)
-export const notificationsAtom = atom<
-  Array<{
-    id: string
-    title: string
-    description: string
-    time: string
-    read: boolean
-    icon?: React.ReactNode
-  }>
->([])
+// UI State Atoms
+export const sidebarCollapsedAtom = atomWithStorage<boolean>("sidebarCollapsed", false);
+export const currentThemeAtom = atomWithStorage<"light" | "dark" | "system">("currentTheme", "dark");
+
+// Application State Atoms
+export const balanceAtom = atom<number>(0);
+
+export const notificationsAtom = atom<Array<{
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  icon?: React.ReactNode;
+}>>([]);

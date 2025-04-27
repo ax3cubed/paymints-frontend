@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Slot } from "@radix-ui/react-slot"
 import { type VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { LucideIcon, PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -32,9 +32,22 @@ import {
   UserCircle,
   Settings,
 } from "lucide-react"
-import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarSeparator } from "./ui/sidebar"
+import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, 
+  SidebarMenuSubButton, SidebarMenuSubItem, SidebarSeparator } from "../ui/sidebar"
 // First, let's define our navigation structure as a JSON object
-const navigationItems = [
+export type NavigationItem = {
+  title?: string;
+  icon?: LucideIcon;
+  path?: string;
+  tooltip?: string;
+  type?: string;
+  submenu?: {
+    title?: string;
+    path?: string;
+  }[];
+};
+
+const navigationItems:NavigationItem[] = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
@@ -67,32 +80,14 @@ const navigationItems = [
     icon: ShoppingCart,
     path: "/dashboard/orders",
     tooltip: "Orders",
-    submenu: [
-      {
-        title: "All Orders",
-        path: "/dashboard/orders"
-      },
-      {
-        title: "Templates",
-        path: "/dashboard/orders/templates"
-      }
-    ]
+     
   },
   {
     title: "Invoicing",
     icon: Receipt,
     path: "/dashboard/invoicing",
     tooltip: "Invoicing",
-    submenu: [
-      {
-        title: "Create Invoice",
-        path: "/dashboard/invoicing"
-      },
-      {
-        title: "View Invoices",
-        path: "/dashboard/invoices"
-      }
-    ]
+     
   },
   {
     title: "Payroll",
@@ -120,16 +115,6 @@ const navigationItems = [
     icon: UserCircle,
     path: "/dashboard/profile",
     tooltip: "Profile",
-    submenu: [
-      {
-        title: "View Profile",
-        path: "/dashboard/profile"
-      },
-      {
-        title: "Edit Profile",
-        path: "/dashboard/profile/edit"
-      }
-    ]
   },
   {
     title: "Settings",
@@ -160,7 +145,7 @@ export const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentPro
 
           // Check if path is active (current path matches or starts with the item path)
           const isActive = item.path === pathname ||
-            (item.submenu && pathname.startsWith(item.path));
+            (item.submenu && pathname.startsWith( item.path || ''));
 
           // Create Icon component
           const IconComponent = item.icon;
@@ -174,12 +159,12 @@ export const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentPro
               >
                 {item.path ? (
                   <Link href={item.path}>
-                    <item.icon />
+                    {IconComponent && <IconComponent />}
                     <span>{item.title}</span>
                   </Link>
                 ) : (
                   <>
-                    {IconComponent}
+                    {IconComponent && <IconComponent />}
                     <span>{item.title}</span>
                   </>
                 )}
@@ -197,7 +182,7 @@ export const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentPro
                           isActive={isSubItemActive}
                           asChild
                         >
-                          <Link href={subItem.path}>
+                          <Link href={subItem.path || ''}>
                             {subItem.title}
                           </Link>
                         </SidebarMenuSubButton>

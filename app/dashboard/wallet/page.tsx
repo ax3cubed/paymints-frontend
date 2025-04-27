@@ -30,10 +30,15 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { useSolana } from "@/components/solana/solana-provider"
+import { useFetchTokens } from "@/hooks/use-fetch-tokens"
+import { useFetchTransactions } from "@/hooks/use-fetch-transactions"
+
 
 export default function WalletPage() {
-  const { toast } = useToast()
+
   const [isDepositOpen, setIsDepositOpen] = useState(false)
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
   const [isSwapOpen, setIsSwapOpen] = useState(false)
@@ -44,23 +49,35 @@ export default function WalletPage() {
   const [swapFromCurrency, setSwapFromCurrency] = useState("USDC")
   const [swapToCurrency, setSwapToCurrency] = useState("SOL")
   const [swapAmount, setSwapAmount] = useState("")
-
+  const { publicKey, sendTransaction } = useWallet()
+  const { rpc: connection } = useSolana()
+  const [isLoading, setIsLoading] = useState(false)
   // Mock wallet data
-  const walletAddress = "8xj7dkQcD9zw6rEcR7uVX3pWfxJ7Vd5U8QJMpzKUH2Zq"
-  const walletBalances = [
-    { currency: "USDC", balance: 2458.67, value: 2458.67, icon: "/placeholder.svg?height=24&width=24" },
-    { currency: "SOL", balance: 12.45, value: 1245.0, icon: "/placeholder.svg?height=24&width=24" },
-    { currency: "USDT", balance: 500.0, value: 500.0, icon: "/placeholder.svg?height=24&width=24" },
-    { currency: "ETH", balance: 0.25, value: 750.0, icon: "/placeholder.svg?height=24&width=24" },
-  ]
+  const walletAddress = publicKey?.toString() || "";
+  const { tokens, isLoading: isfetTokenLoading } = useFetchTokens(publicKey, connection)
+const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactions(publicKey, connection)
+
+  const walletBalances = tokens.map((token) => ({
+    currency: token.symbol || token.name || "Unknown",
+    balance: token.amount,
+    value: token.amount * 1, // Assuming 1:1 for simplicity
+    icon: token.logo,
+  }))
 
   const totalBalance = walletBalances.reduce((sum, currency) => sum + currency.value, 0)
+
+
+  const openExplorer = (signature: string) => {
+    const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
+    const url = `https://explorer.solana.com/tx/${signature}${network !== "mainnet-beta" ? `?cluster=${network}` : ""}`
+    window.open(url, "_blank")
+  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
-    toast({
-      title: "Copied to clipboard",
+    toast("Copied to clipboard", {
+
       description: "Wallet address has been copied to your clipboard.",
     })
     setTimeout(() => setCopied(false), 2000)
@@ -81,8 +98,7 @@ export default function WalletPage() {
   }
 
   const executeWithdraw = () => {
-    toast({
-      title: "Withdrawal initiated",
+    toast("Withdrawal initiated", {
       description: `${withdrawAmount} ${withdrawCurrency} withdrawal has been initiated.`,
     })
     setIsWithdrawOpen(false)
@@ -90,8 +106,7 @@ export default function WalletPage() {
   }
 
   const executeSwap = () => {
-    toast({
-      title: "Swap executed",
+    toast("Swap executed", {
       description: `Successfully swapped ${swapAmount} ${swapFromCurrency} to ${swapToCurrency}.`,
     })
     setIsSwapOpen(false)
@@ -402,9 +417,8 @@ export default function WalletPage() {
                 <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-secondary/10">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        tx.type === "incoming" ? "bg-success/20" : "bg-destructive/20"
-                      }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "incoming" ? "bg-success/20" : "bg-destructive/20"
+                        }`}
                     >
                       {tx.type === "incoming" ? (
                         <ArrowDownRight className="h-5 w-5 text-success" />

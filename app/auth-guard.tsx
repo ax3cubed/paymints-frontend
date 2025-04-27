@@ -1,34 +1,29 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type { ReactNode } from "react";
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAtom } from "jotai";
+import { isAuthenticatedAtom, isLoadingAtom } from "@/lib/atoms";
 
-import { useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import { useAtom } from "jotai"
-import { isAuthenticatedAtom, isLoadingAtom } from "@/lib/atoms"
+const publicRoutes = ["/", "/about", "/contact"];
 
-// List of public routes that don't require authentication
-const publicRoutes = ["/", "/about", "/contact"]
-
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated] = useAtom(isAuthenticatedAtom)
-  const [isLoading] = useAtom(isLoadingAtom)
-  const router = useRouter()
-  const pathname = usePathname()
+export default function AuthGuard({ children }: { children: ReactNode }) {
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [isLoading] = useAtom(isLoadingAtom);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Skip auth check for public routes
     if (publicRoutes.includes(pathname)) {
-      return
+      return;
     }
 
-    // If auth is loaded and user is not authenticated, redirect to home page
     if (!isLoading && !isAuthenticated) {
-      router.push("/")
+      router.push("/");
     }
-  }, [isAuthenticated, isLoading, pathname, router])
+  }, [isAuthenticated, isLoading, pathname, router]);
 
-  // Show loading state while checking authentication
   if (isLoading && !publicRoutes.includes(pathname)) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -37,14 +32,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <p className="text-lg">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  // If on a protected route and not authenticated, don't render children
   if (!publicRoutes.includes(pathname) && !isAuthenticated && !isLoading) {
-    return null
+    return null;
   }
 
-  // Otherwise, render children
-  return <>{children}</>
+  return <>{children}</>;
 }

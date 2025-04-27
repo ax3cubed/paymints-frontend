@@ -1,0 +1,77 @@
+import { TokenBalance } from "@/types"
+import { fetchMint } from "@solana-program/token"
+import { address, Rpc, SolanaRpcApi } from "@solana/kit"
+import { PublicKey } from "@solana/web3.js"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+
+// Import token list
+import tokenList from "@/utils/token-list.json" // We'll create this file locally!
+
+export function useFetchTokens(publicKey: PublicKey | null, connection: Rpc<SolanaRpcApi> | null) {
+  const [tokens, setTokens] = useState<TokenBalance[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchTokens = async () => {
+      if (!publicKey || !connection) return
+
+      setIsLoading(true)
+
+      try {
+        const { value: tokenAccounts } = await connection
+          .getTokenAccountsByOwner(address(publicKey.toString()), {
+            programId: address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+          })
+          .send({ abortSignal: new AbortController().signal })
+
+        if (!tokenAccounts.length) {
+          console.error("No token accounts found for the wallet")
+          setTokens([])
+          return
+        }
+
+        const tokensFetched: TokenBalance[] = []
+
+        for (const tokenAccount of tokenAccounts) {
+          const tokenPubkey = tokenAccount.pubkey
+
+          const { value: accountInfo } = await connection
+            .getTokenAccountBalance(tokenPubkey)
+            .send({ abortSignal: new AbortController().signal })
+
+          // This needs to decode tokenAccount.account.data properly
+          const mintAddress = new PublicKey(tokenAccount.account.data).toString()
+
+          const mintInfo = await fetchMint(connection, address(mintAddress), {
+            commitment: "confirmed",
+          })
+
+          // Lookup token metadata
+          const metadata = tokenList.find(t => t.address === mintAddress)
+
+          tokensFetched.push({
+            mint: mintAddress,
+            amount: parseFloat(accountInfo.uiAmountString || "0"),
+            decimals: mintInfo.data.decimals,
+            symbol: metadata?.symbol || "",
+            name: metadata?.name || "",
+            logo: metadata?.logoURI || "",
+          })
+        }
+
+        setTokens(tokensFetched)
+      }
+      catch (error) {
+        console.error("Failed to fetch tokens:", error)
+        toast.error("Failed to fetch token balances")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchTokens()
+  }, [publicKey, connection])
+
+  return { tokens, isLoading }
+}

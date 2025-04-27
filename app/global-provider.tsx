@@ -6,6 +6,10 @@ import { ThemeProvider } from "@/components/theme-provider"
 import AuthGuard from "@/app/auth-guard"
 import dynamic from "next/dynamic"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { ReactQueryProvider } from "@/components/react-query-provider"
+import { ClusterProvider } from "@/components/cluster-provider"
+import { SolanaProvider } from "@/components/solana/solana-provider"
+import { Toaster } from "sonner"
 
 const AuthProvider = dynamic(() => import("@/components/auth-provider").then((mod) => mod.AuthProvider), {
     ssr: false,
@@ -17,15 +21,22 @@ interface GlobalProviderProps {
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
     return (
-        <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-                <AuthGuard>
-                    <SidebarProvider >
-                        {children}
-                    </SidebarProvider>
-                </AuthGuard>
-            </ThemeProvider>
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthGuard>
+                <SidebarProvider>
+                    <ReactQueryProvider>
+                        <ClusterProvider>
+                            <SolanaProvider>
+                                <AuthProvider>
+                                    {children}
+                                    <Toaster position="bottom-right" />
+                                </AuthProvider>
+                            </SolanaProvider>
+                        </ClusterProvider>
+                    </ReactQueryProvider>
+                </SidebarProvider>
+            </AuthGuard>
+        </ThemeProvider>
     )
 }
 
