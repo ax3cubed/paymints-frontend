@@ -8,10 +8,13 @@ import dynamic from "next/dynamic"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ReactQueryProvider } from "@/components/react-query-provider"
 import { ClusterProvider } from "@/components/cluster-provider"
-import { SolanaProvider } from "@/components/solana/solana-provider"
 import { Toaster } from "sonner"
 
 const AuthProvider = dynamic(() => import("@/components/auth-provider").then((mod) => mod.AuthProvider), {
+    ssr: false,
+})
+
+const SolanaProvider = dynamic(() => import("@/components/solana/solana-provider").then((mod) => mod.SolanaProvider), {
     ssr: false,
 })
 

@@ -26,7 +26,7 @@ export function useFetchTokens(publicKey: PublicKey | null, connection: Rpc<Sola
           .send({ abortSignal: new AbortController().signal })
 
         if (!tokenAccounts.length) {
-          console.error("No token accounts found for the wallet")
+          console.log("No token accounts found for the wallet")
           setTokens([])
           return
         }
