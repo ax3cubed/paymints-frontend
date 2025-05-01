@@ -4,10 +4,8 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type { Address } from "@solana/kit";
 
-// Auth & Wallet Atoms
-export const walletAddressAtom = atomWithStorage<Address | null>("walletAddress", null);
-export const isAuthenticatedAtom = atomWithStorage<boolean>("isAuthenticated", false);
-export const isLoadingAtom = atom<boolean>(true);
+
+export const isLoadingAtom = atom<boolean>(false);
 
 // UI State Atoms
 export const sidebarCollapsedAtom = atomWithStorage<boolean>("sidebarCollapsed", false);

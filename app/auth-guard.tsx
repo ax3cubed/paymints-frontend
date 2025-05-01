@@ -1,43 +1,54 @@
-"use client";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth-provider';
+import { useLoadingContext } from '@/providers/loading-provider';
 
-import type { ReactNode } from "react";
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useAtom } from "jotai";
-import { isAuthenticatedAtom, isLoadingAtom } from "@/lib/atoms";
+interface AuthGuardProps {
+  children: React.ReactNode;
+  requiredAuth?: boolean; // true = require authentication, false = require no authentication
+  adminOnly?: boolean;     // true = only allow admins
+  redirectTo?: string;    // where to redirect if requirements not met
+}
 
-const publicRoutes = ["/", "/about", "/contact"];
-
-export default function AuthGuard({ children }: { children: ReactNode }) {
-  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
-  const [isLoading] = useAtom(isLoadingAtom);
+export function AuthGuard({
+  children,
+  requiredAuth = true,
+  adminOnly = false,
+  redirectTo,
+}: AuthGuardProps) {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+  const { startLoading, stopLoading } = useLoadingContext();
 
   useEffect(() => {
-    if (publicRoutes.includes(pathname)) {
+    if (isLoading) {
+      startLoading("default", "Checking authentication...");
+      return;
+    } else {
+      stopLoading();
+    }
+
+    if (requiredAuth && !isAuthenticated) {
+      router.push(redirectTo || '/');
       return;
     }
 
-    if (!isLoading && !isAuthenticated) {
-      router.push("/");
+    if (!requiredAuth && isAuthenticated) {
+      router.push(redirectTo || '/dashboard');
+      return;
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
 
-  if (isLoading && !publicRoutes.includes(pathname)) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-lg">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+    if (adminOnly && (!user || !user.isAdmin)) {
+      router.push(redirectTo || '/dashboard');
+      return;
+    }
+  }, [isAuthenticated, isLoading, user, requiredAuth, adminOnly, redirectTo, router]);
 
-  if (!publicRoutes.includes(pathname) && !isAuthenticated && !isLoading) {
-    return null;
-  }
+  if (isLoading) return <div>Loading...</div>;
+
+  if (requiredAuth && !isAuthenticated) return null;
+  if (!requiredAuth && isAuthenticated) return null;
+  if (adminOnly && (!user || !user.isAdmin)) return null;
 
   return <>{children}</>;
 }

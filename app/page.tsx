@@ -12,7 +12,7 @@ import { useAuth } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAtom } from "jotai"
-import { isAuthenticatedAtom } from "@/lib/atoms"
+import { isAuthenticatedAtom } from "@/lib/store/auth"
 
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)

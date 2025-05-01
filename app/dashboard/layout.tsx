@@ -6,9 +6,9 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/components/auth-provider"
 import { useAtom } from "jotai"
-import { walletAddressAtom } from "@/lib/atoms"
 import { SidebarWrapper } from "@/components/sidebar/sidebar-wrapper"
 import { DashboardHeader } from "@/components/header/dashboard-header"
+import { walletAddressAtom } from "@/lib/store/wallet"
 
 export default function DashboardLayout({
   children,

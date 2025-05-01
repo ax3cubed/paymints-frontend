@@ -3,12 +3,15 @@
 import type React from "react"
 import type { ReactNode } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
-import AuthGuard from "@/app/auth-guard"
+import { AuthGuard } from "@/app/auth-guard"
 import dynamic from "next/dynamic"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ReactQueryProvider } from "@/components/react-query-provider"
 import { ClusterProvider } from "@/components/cluster-provider"
 import { Toaster } from "sonner"
+import { LoadingProvider } from "@/providers/loading-provider"
+import { Provider as JotaiProvider } from "jotai"
+import { ApiInterceptorProvider } from "@/providers/api-interceptor-provider"
 
 const AuthProvider = dynamic(() => import("@/components/auth-provider").then((mod) => mod.AuthProvider), {
     ssr: false,
@@ -24,23 +27,30 @@ interface GlobalProviderProps {
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
     return (
-        <ThemeProvider>
-            <AuthGuard>
-                <SidebarProvider>
-                    <ReactQueryProvider>
-                        <ClusterProvider>
-                            <SolanaProvider>
-                                <AuthProvider>
-                                    {children}
-                                    <Toaster position="bottom-right" />
-                                </AuthProvider>
-                            </SolanaProvider>
-                        </ClusterProvider>
-                    </ReactQueryProvider>
-                </SidebarProvider>
-            </AuthGuard>
-        </ThemeProvider>
+        <JotaiProvider>
+            <ApiInterceptorProvider>
+                <ClusterProvider>
+                    <SolanaProvider>
+                        <ThemeProvider>
+                            <AuthProvider>
+                                <LoadingProvider>
+                                    {/* <AuthGuard requiredAuth={false} redirectTo="/dashboard"> */}
+                                        <SidebarProvider>
+                                            <ReactQueryProvider>
+                                                {children}
+                                                <Toaster position="bottom-right" />
+                                            </ReactQueryProvider>
+                                        </SidebarProvider>
+                                    {/* </AuthGuard> */}
+                                </LoadingProvider>
+                            </AuthProvider>
+                        </ThemeProvider>
+                    </SolanaProvider>
+                </ClusterProvider>
+            </ApiInterceptorProvider>
+        </JotaiProvider>
     )
+
 }
 
 export default GlobalProvider

@@ -1,22 +1,41 @@
 "use client"
 
-import { Button, type ButtonProps } from "@/components/ui/button"
+import { Button, ButtonProps } from "@/components/ui/button"
 import { useAuth } from "@/components/auth-provider"
-import { Loader2, Wallet } from "lucide-react"
+import { Loader2, LogOut, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAtom } from "jotai"
-import { isAuthenticatedAtom, isLoadingAtom, walletAddressAtom } from "@/lib/atoms"
+import { walletAddressAtom } from "@/lib/store/wallet"
+import { isAuthenticatedAtom, isLoadingAuthAtom } from "@/lib/store/auth"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { useState } from "react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-interface WalletConnectButtonProps extends ButtonProps {
-  showAddress?: boolean
+interface WalletConnectButtonProps {
+  id?: string
+  className?: string
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
 }
 
-export function WalletConnectButton({ showAddress = false, className, ...props }: WalletConnectButtonProps) {
-  const { connectWallet, disconnectWallet } = useAuth()
+export function WalletConnectButton({ id, className, variant = "outline", ...props }: WalletConnectButtonProps) {
+  const { connectWallet, logout:disconnectWallet } = useAuth()
+  const { publicKey } = useWallet()
   const [isAuthenticated] = useAtom(isAuthenticatedAtom)
-  const [isLoading] = useAtom(isLoadingAtom)
+  const [isLoading] = useAtom(isLoadingAuthAtom)
   const [walletAddress] = useAtom(walletAddressAtom)
+  const [isHovering, setIsHovering] = useState(false)
 
+  const formatWalletAddress = (address: string | null) => {
+    if (!address) return ""
+    return `${address.slice(0, 4)}...${address.slice(-4)}`
+  }
   // Format wallet address for display
   const formatAddress = (address: string | null) => {
     if (!address) return ""
@@ -25,7 +44,7 @@ export function WalletConnectButton({ showAddress = false, className, ...props }
 
   if (isLoading) {
     return (
-      <Button variant="outline" className={cn("gap-2", className)} disabled {...props}>
+      <Button id={id} variant="outline" className={cn("gap-2", className)} disabled {...props}>
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading...
       </Button>
@@ -34,15 +53,40 @@ export function WalletConnectButton({ showAddress = false, className, ...props }
 
   if (isAuthenticated && walletAddress) {
     return (
-      <Button variant="outline" className={cn("gap-2", className)} onClick={disconnectWallet} {...props}>
-        <Wallet className="h-4 w-4" />
-        {showAddress ? formatAddress(walletAddress) : "Disconnect"}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            id={id}
+            variant={variant}
+            className={cn("gap-2", className)}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          >
+            <Wallet className="h-4 w-4" />
+            {formatWalletAddress(walletAddress)}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Wallet</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => {
+              navigator.clipboard.writeText(walletAddress)
+            }}
+          >
+            Copy address
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={disconnectWallet} className="text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
+            Disconnect
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     )
   }
 
   return (
-    <Button className={cn("gap-2", className)} onClick={connectWallet} {...props}>
+    <Button id={id} className={cn("gap-2", className)} onClick={connectWallet} {...props}>
       <Wallet className="h-4 w-4" />
       Connect Wallet
     </Button>
