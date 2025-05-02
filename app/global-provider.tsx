@@ -31,16 +31,16 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
             <ApiInterceptorProvider>
                 <ClusterProvider>
                     <SolanaProvider>
-                        <ThemeProvider>
+                        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
                             <AuthProvider>
                                 <LoadingProvider>
                                     {/* <AuthGuard requiredAuth={false} redirectTo="/dashboard"> */}
-                                        <SidebarProvider>
-                                            <ReactQueryProvider>
-                                                {children}
-                                                <Toaster position="bottom-right" />
-                                            </ReactQueryProvider>
-                                        </SidebarProvider>
+                                    <SidebarProvider>
+                                        <ReactQueryProvider>
+                                            {children}
+                                            <Toaster position="bottom-right" />
+                                        </ReactQueryProvider>
+                                    </SidebarProvider>
                                     {/* </AuthGuard> */}
                                 </LoadingProvider>
                             </AuthProvider>

@@ -51,12 +51,12 @@ export function useFetchTokens(publicKey: PublicKey | null, connection: Rpc<Sola
           const metadata = tokenList.find(t => t.address === mintAddress)
 
           tokensFetched.push({
-            mint: mintAddress,
-            amount: parseFloat(accountInfo.uiAmountString || "0"),
-            decimals: mintInfo.data.decimals,
+            mintAddress: mintAddress,
+            balance: parseFloat(accountInfo.uiAmountString || "0"),
             symbol: metadata?.symbol || "",
-            name: metadata?.name || "",
-            logo: metadata?.logoURI || "",
+            imageUrl: metadata?.logoURI || "",
+            associatedTokenAddress: tokenPubkey.toString(),
+
           })
         }
 

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "motion/react"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,31 +17,38 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Separator } from "@/components/ui/separator"
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
-  Wallet,
   Copy,
   QrCode,
   RefreshCw,
-  ArrowRight,
   CheckCircle2,
   ExternalLink,
   AlertCircle,
+  ChevronRight,
+  Clock,
+  BarChart3,
+  Info,
+  ArrowDownUp,
+  Loader2,
+  Sun,
+  Moon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useSolana } from "@/components/solana/solana-provider"
-import { useFetchTokens } from "@/hooks/use-fetch-tokens"
-import { useFetchTransactions } from "@/hooks/use-fetch-transactions"
+import { useAuth } from "@/components/auth-provider"
+import { QRCodeSVG } from "qrcode.react"
+import { useTheme } from "next-themes"
 
-
+ 
 export default function WalletPage() {
-
   const [isDepositOpen, setIsDepositOpen] = useState(false)
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
   const [isSwapOpen, setIsSwapOpen] = useState(false)
+  const [isQrCodeOpen, setIsQrCodeOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [depositCurrency, setDepositCurrency] = useState("USDC")
   const [withdrawCurrency, setWithdrawCurrency] = useState("USDC")
@@ -49,23 +56,40 @@ export default function WalletPage() {
   const [swapFromCurrency, setSwapFromCurrency] = useState("USDC")
   const [swapToCurrency, setSwapToCurrency] = useState("SOL")
   const [swapAmount, setSwapAmount] = useState("")
-  const { publicKey, sendTransaction } = useWallet()
-  const { rpc: connection } = useSolana()
-  const [isLoading, setIsLoading] = useState(false)
-  // Mock wallet data
-  const walletAddress = publicKey?.toString() || "";
-  const { tokens, isLoading: isfetTokenLoading } = useFetchTokens(publicKey, connection)
-const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactions(publicKey, connection)
+  const [swapEstimate, setSwapEstimate] = useState("")
+  const [isSwapLoading, setIsSwapLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("all")
+  const { publicKey, sendTransaction } = useWallet?.() || { publicKey: null, sendTransaction: null }
+  const { theme, setTheme } = useTheme()
 
-  const walletBalances = tokens.map((token) => ({
-    currency: token.symbol || token.name || "Unknown",
-    balance: token.amount,
-    value: token.amount * 1, // Assuming 1:1 for simplicity
-    icon: token.logo,
-  }))
+  // Safely use auth context or fallback to mock data
+  const auth = useAuth()
+  const tokens = auth?.tokens || []
+  const walletBalances =
+    tokens?.map((token) => ({
+      currency: token.symbol,
+      balance: token.balance,
+      value: token.balance * 1, // Assuming 1:1 for simplicity
+      icon: token.imageUrl,
+      mintAddress: token.mintAddress,
+      change: Math.random() > 0.5 ? `+${(Math.random() * 5).toFixed(2)}%` : `-${(Math.random() * 5).toFixed(2)}%`,
+      changePositive: Math.random() > 0.5,
+    })) || []
 
+  // Mock wallet address if not available from wallet adapter
+  const walletAddress = publicKey?.toString() || "8xrt6LGom3xRwNKgdAXakJQ9Bvmw4hEQFo7ne7Q9RyPd"
   const totalBalance = walletBalances.reduce((sum, currency) => sum + currency.value, 0)
 
+  // Calculate swap estimate when amount or currencies change
+  useEffect(() => {
+    if (swapAmount) {
+      // Simulate exchange rate calculation
+      const rate = swapFromCurrency === "USDC" && swapToCurrency === "SOL" ? 0.01 : 100
+      setSwapEstimate((Number(swapAmount) * rate).toFixed(swapToCurrency === "SOL" ? 4 : 2))
+    } else {
+      setSwapEstimate("")
+    }
+  }, [swapAmount, swapFromCurrency, swapToCurrency])
 
   const openExplorer = (signature: string) => {
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
@@ -77,8 +101,8 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
     navigator.clipboard.writeText(text)
     setCopied(true)
     toast("Copied to clipboard", {
-
       description: "Wallet address has been copied to your clipboard.",
+      icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
     })
     setTimeout(() => setCopied(false), 2000)
   }
@@ -100,81 +124,153 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
   const executeWithdraw = () => {
     toast("Withdrawal initiated", {
       description: `${withdrawAmount} ${withdrawCurrency} withdrawal has been initiated.`,
+      icon: <ArrowUpRight className="h-4 w-4 text-primary" />,
     })
     setIsWithdrawOpen(false)
     setWithdrawAmount("")
   }
 
   const executeSwap = () => {
-    toast("Swap executed", {
-      description: `Successfully swapped ${swapAmount} ${swapFromCurrency} to ${swapToCurrency}.`,
-    })
-    setIsSwapOpen(false)
-    setSwapAmount("")
+    setIsSwapLoading(true)
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsSwapLoading(false)
+      toast("Swap executed", {
+        description: `Successfully swapped ${swapAmount} ${swapFromCurrency} to ${swapEstimate} ${swapToCurrency}.`,
+        icon: <RefreshCw className="h-4 w-4 text-primary" />,
+      })
+      setIsSwapOpen(false)
+      setSwapAmount("")
+    }, 1500)
   }
 
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+
+  const recentTransactions = [
+    {
+      type: "incoming",
+      description: "Payment from CryptoDAO Collective",
+      amount: "+2,500.00 USDC",
+      date: "Today, 10:24 AM",
+      status: "completed",
+      signature: "5UxV2MR7zzQiip4gAMXgEi51jmT7YLaqGS6NuhoZGnAFQ6RtVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
+    },
+    {
+      type: "outgoing",
+      description: "Withdrawal to External Wallet",
+      amount: "-500.00 USDC",
+      date: "Yesterday, 3:15 PM",
+      status: "completed",
+      signature: "3E1gZ3BXmefAUDmPVfYgtoUWeMFVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
+    },
+    {
+      type: "swap",
+      description: "Swap USDC to SOL",
+      amount: "-1,000.00 USDC / +10.00 SOL",
+      date: "Apr 10, 2025",
+      status: "completed",
+      signature: "2xVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
+    },
+    {
+      type: "incoming",
+      description: "Yield Earned",
+      amount: "+32.45 USDC",
+      date: "Apr 8, 2025",
+      status: "completed",
+      signature: "1gZ3BXmefAUDmPVfYgtoUWeMFVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
+    },
+  ]
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Wallet</h1>
-          <p className="text-muted-foreground">Manage your crypto assets and transactions</p>
-        </div>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline" onClick={() => setIsDepositOpen(true)}>
-            <ArrowDownRight className="mr-2 h-4 w-4" />
-            Deposit
-          </Button>
-          <Button variant="outline" onClick={() => setIsWithdrawOpen(true)}>
-            <ArrowUpRight className="mr-2 h-4 w-4" />
-            Withdraw
-          </Button>
-          <Button onClick={() => setIsSwapOpen(true)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Swap
-          </Button>
+    <div className="space-y-8 pb-10">
+      {/* Header with gradient background */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-500 to-purple-700 p-8 mb-8">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white">Wallet</h1>
+              <p className="text-violet-100">Manage your crypto assets and transactions</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="bg-white/10 text-white hover:bg-white/20"
+              >
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button variant="secondary" onClick={() => setIsDepositOpen(true)}>
+                <ArrowDownRight className="mr-2 h-4 w-4" />
+                Deposit
+              </Button>
+              <Button variant="secondary" onClick={() => setIsWithdrawOpen(true)}>
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+                Withdraw
+              </Button>
+              <Button variant="default" onClick={() => setIsSwapOpen(true)}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Swap
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-white/10 border-0 backdrop-blur-sm text-white">
+              <CardContent className="p-4 flex flex-col">
+                <div className="text-violet-200 text-sm font-medium mb-1">Total Balance</div>
+                <div className="text-2xl font-bold">${totalBalance.toLocaleString()}</div>
+                <div className="text-xs text-violet-200 mt-1">Across {walletBalances.length} currencies</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-0 backdrop-blur-sm text-white">
+              <CardContent className="p-4 flex flex-col">
+                <div className="text-violet-200 text-sm font-medium mb-1">Wallet Address</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-mono truncate">{formatAddress(walletAddress)}</div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                    onClick={() => copyToClipboard(walletAddress)}
+                  >
+                    {copied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                    onClick={() => setIsQrCodeOpen(true)}
+                  >
+                    <QrCode className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-0 backdrop-blur-sm text-white">
+              <CardContent className="p-4 flex flex-col">
+                <div className="text-violet-200 text-sm font-medium mb-1">24h Change</div>
+                <div className="text-2xl font-bold text-green-400">+$127.45</div>
+                <div className="text-xs text-green-300 mt-1">+2.3% from yesterday</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-0 backdrop-blur-sm text-white">
+              <CardContent className="p-4 flex flex-col">
+                <div className="text-violet-200 text-sm font-medium mb-1">Portfolio Health</div>
+                <div className="text-2xl font-bold">Excellent</div>
+                <div className="text-xs text-violet-200 mt-1">Well-diversified assets</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-
-      {/* Wallet Overview */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Wallet Overview</CardTitle>
-            <CardDescription>Your wallet address and total balance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-              <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">Wallet Address</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-3 bg-secondary/20 rounded-lg break-all text-sm">{formatAddress(walletAddress)}</div>
-                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(walletAddress)}>
-                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <QrCode className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium">Total Balance</h3>
-                  <Badge variant="outline" className="ml-auto">
-                    Multi-currency
-                  </Badge>
-                </div>
-                <div className="text-3xl font-bold">${totalBalance.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Across {walletBalances.length} currencies</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* Currency Balances */}
       <motion.div
@@ -182,186 +278,87 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <Card>
-          <CardHeader>
-            <CardTitle>Currency Balances</CardTitle>
+        <Card className="overflow-hidden border-none shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <CardTitle className="flex items-center">
+              <BarChart3 className="mr-2 h-5 w-5 text-primary" />
+              Currency Balances
+            </CardTitle>
             <CardDescription>Your balances across different cryptocurrencies</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="stablecoins">Stablecoins</TabsTrigger>
-                <TabsTrigger value="tokens">Tokens</TabsTrigger>
+          <CardContent className="p-6">
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-6 w-full justify-start">
+                <TabsTrigger value="all" className="relative">
+                  All
+                  <Badge className="ml-2 bg-primary/10 text-primary hover:bg-primary/20">{walletBalances.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="stablecoins" className="relative">
+                  Stablecoins
+                  <Badge className="ml-2 bg-primary/10 text-primary hover:bg-primary/20">
+                    {walletBalances.filter((c) => ["USDC", "USDT"].includes(c.currency)).length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="tokens" className="relative">
+                  Tokens
+                  <Badge className="ml-2 bg-primary/10 text-primary hover:bg-primary/20">
+                    {walletBalances.filter((c) => !["USDC", "USDT"].includes(c.currency)).length}
+                  </Badge>
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="all">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {walletBalances.map((currency, index) => (
-                    <Card key={index} className="bg-secondary/10">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                              {currency.icon ? (
-                                <img
-                                  src={currency.icon || "/placeholder.svg"}
-                                  alt={currency.currency}
-                                  className="w-6 h-6"
-                                />
-                              ) : (
-                                <span className="text-xs font-bold">{currency.currency}</span>
-                              )}
-                            </div>
-                            <span className="font-medium">{currency.currency}</span>
-                          </div>
-                          <Badge variant="outline">{((currency.value / totalBalance) * 100).toFixed(1)}%</Badge>
-                        </div>
-                        <div className="text-2xl font-bold mb-1">
-                          {currency.balance.toLocaleString()} {currency.currency}
-                        </div>
-                        <div className="text-sm text-muted-foreground">${currency.value.toLocaleString()}</div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TabsContent value="all" className="mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {walletBalances.map((currency, index) => (
+                        <CurrencyCard
+                          key={index}
+                          currency={currency}
+                          onDeposit={handleDeposit}
+                          onWithdraw={handleWithdraw}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
 
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleDeposit(currency.currency)}
-                          >
-                            Deposit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleWithdraw(currency.currency)}
-                          >
-                            Withdraw
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <TabsContent value="stablecoins" className="mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {walletBalances
+                        .filter((c) => ["USDC", "USDT"].includes(c.currency))
+                        .map((currency, index) => (
+                          <CurrencyCard
+                            key={index}
+                            currency={currency}
+                            onDeposit={handleDeposit}
+                            onWithdraw={handleWithdraw}
+                          />
+                        ))}
+                    </div>
+                  </TabsContent>
 
-                  <Card className="bg-secondary/10 border-dashed">
-                    <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center">
-                      <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="font-medium mb-1">Add Currency</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Support for 50+ cryptocurrencies</p>
-                      <Button variant="outline" size="sm">
-                        Add New
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="stablecoins">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {walletBalances
-                    .filter((c) => ["USDC", "USDT"].includes(c.currency))
-                    .map((currency, index) => (
-                      <Card key={index} className="bg-secondary/10">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                {currency.icon ? (
-                                  <img
-                                    src={currency.icon || "/placeholder.svg"}
-                                    alt={currency.currency}
-                                    className="w-6 h-6"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold">{currency.currency}</span>
-                                )}
-                              </div>
-                              <span className="font-medium">{currency.currency}</span>
-                            </div>
-                            <Badge variant="outline">{((currency.value / totalBalance) * 100).toFixed(1)}%</Badge>
-                          </div>
-                          <div className="text-2xl font-bold mb-1">
-                            {currency.balance.toLocaleString()} {currency.currency}
-                          </div>
-                          <div className="text-sm text-muted-foreground">${currency.value.toLocaleString()}</div>
-
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleDeposit(currency.currency)}
-                            >
-                              Deposit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleWithdraw(currency.currency)}
-                            >
-                              Withdraw
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="tokens">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {walletBalances
-                    .filter((c) => !["USDC", "USDT"].includes(c.currency))
-                    .map((currency, index) => (
-                      <Card key={index} className="bg-secondary/10">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                {currency.icon ? (
-                                  <img
-                                    src={currency.icon || "/placeholder.svg"}
-                                    alt={currency.currency}
-                                    className="w-6 h-6"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold">{currency.currency}</span>
-                                )}
-                              </div>
-                              <span className="font-medium">{currency.currency}</span>
-                            </div>
-                            <Badge variant="outline">{((currency.value / totalBalance) * 100).toFixed(1)}%</Badge>
-                          </div>
-                          <div className="text-2xl font-bold mb-1">
-                            {currency.balance.toLocaleString()} {currency.currency}
-                          </div>
-                          <div className="text-sm text-muted-foreground">${currency.value.toLocaleString()}</div>
-
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleDeposit(currency.currency)}
-                            >
-                              Deposit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleWithdraw(currency.currency)}
-                            >
-                              Withdraw
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
+                  <TabsContent value="tokens" className="mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {walletBalances
+                        .filter((c) => !["USDC", "USDT"].includes(c.currency))
+                        .map((currency, index) => (
+                          <CurrencyCard
+                            key={index}
+                            currency={currency}
+                            onDeposit={handleDeposit}
+                            onWithdraw={handleWithdraw}
+                          />
+                        ))}
+                    </div>
+                  </TabsContent>
+                </motion.div>
+              </AnimatePresence>
             </Tabs>
           </CardContent>
         </Card>
@@ -373,66 +370,85 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Your latest wallet activity</CardDescription>
+        <Card className="overflow-hidden border-none shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="mr-2 h-5 w-5 text-primary" />
+                <CardTitle>Recent Transactions</CardTitle>
+              </div>
+              <Button variant="outline" size="sm" asChild className="gap-1">
+                <a href="/dashboard/transactions">
+                  View All
+                  <ChevronRight className="h-4 w-4" />
+                </a>
+              </Button>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/dashboard/transactions">
-                View All
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
+            <CardDescription>Your latest wallet activity</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  type: "incoming",
-                  description: "Payment from CryptoDAO Collective",
-                  amount: "+2,500.00 USDC",
-                  date: "Today, 10:24 AM",
-                },
-                {
-                  type: "outgoing",
-                  description: "Withdrawal to External Wallet",
-                  amount: "-500.00 USDC",
-                  date: "Yesterday, 3:15 PM",
-                },
-                {
-                  type: "incoming",
-                  description: "Invoice #0024 Payment",
-                  amount: "+1,250.00 USDC",
-                  date: "Apr 10, 2025",
-                },
-                {
-                  type: "incoming",
-                  description: "Yield Earned",
-                  amount: "+32.45 USDC",
-                  date: "Apr 8, 2025",
-                },
-              ].map((tx, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-secondary/10">
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {recentTransactions.map((tx, index) => (
+                <div key={index} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "incoming" ? "bg-success/20" : "bg-destructive/20"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center 
+                        ${
+                          tx.type === "incoming"
+                            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                            : tx.type === "outgoing"
+                              ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
                         }`}
                     >
                       {tx.type === "incoming" ? (
-                        <ArrowDownRight className="h-5 w-5 text-success" />
+                        <ArrowDownRight className="h-5 w-5" />
+                      ) : tx.type === "outgoing" ? (
+                        <ArrowUpRight className="h-5 w-5" />
                       ) : (
-                        <ArrowUpRight className="h-5 w-5 text-destructive" />
+                        <ArrowDownUp className="h-5 w-5" />
                       )}
                     </div>
                     <div>
                       <div className="font-medium">{tx.description}</div>
-                      <div className="text-xs text-muted-foreground">{tx.date}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        {tx.date}
+                        <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground mx-1"></span>
+                        <Badge variant="outline" className="text-[10px] py-0 h-4">
+                          {tx.status}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                  <div className={`font-medium ${tx.type === "incoming" ? "text-success" : "text-destructive"}`}>
-                    {tx.amount}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`font-medium text-right ${
+                        tx.type === "incoming"
+                          ? "text-green-600 dark:text-green-400"
+                          : tx.type === "outgoing"
+                            ? "text-red-600 dark:text-red-400"
+                            : ""
+                      }`}
+                    >
+                      {tx.amount}
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => openExplorer(tx.signature)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View on Explorer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               ))}
@@ -441,49 +457,134 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
         </Card>
       </motion.div>
 
+      {/* QR Code Dialog */}
+      <Dialog open={isQrCodeOpen} onOpenChange={setIsQrCodeOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              Wallet QR Code
+            </DialogTitle>
+            <DialogDescription>Scan this code to send funds to your wallet</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="relative w-64 h-64 p-2 bg-white rounded-lg shadow-inner">
+              <QRCodeSVG
+                value={walletAddress}
+                size={240}
+                level="H"
+                imageSettings={{
+                  src: "/placeholder.svg?key=vnm7p",
+                  height: 48,
+                  width: 48,
+                  excavate: true,
+                }}
+                className="w-full h-full"
+              />
+            </div>
+
+            <div className="mt-4 w-full">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Wallet Address</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => copyToClipboard(walletAddress)}
+                >
+                  {copied ? (
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Copied
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Copy className="h-3 w-3" /> Copy
+                    </span>
+                  )}
+                </Button>
+              </div>
+              <div className="p-2 bg-muted rounded-md font-mono text-xs break-all">{walletAddress}</div>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="sm:flex-1" onClick={() => setIsQrCodeOpen(false)}>
+              Close
+            </Button>
+            <Button className="sm:flex-1" asChild>
+              <a
+                href={`https://explorer.solana.com/address/${walletAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on Explorer
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Deposit Dialog */}
       <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Deposit {depositCurrency}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownRight className="h-5 w-5 text-primary" />
+              Deposit {depositCurrency}
+            </DialogTitle>
             <DialogDescription>Send {depositCurrency} to your wallet address</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label>Your {depositCurrency} Address</Label>
-              <div className="flex items-center gap-2">
-                <div className="p-3 bg-secondary/20 rounded-lg break-all text-sm w-full">{walletAddress}</div>
-                <Button variant="outline" size="icon" onClick={() => copyToClipboard(walletAddress)}>
-                  {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-48 h-48 p-2 bg-white rounded-lg shadow-inner mb-4">
+                <QRCodeSVG
+                  value={walletAddress}
+                  size={180}
+                  level="H"
+                  imageSettings={{
+                    src: "/placeholder.svg?key=qbiwe",
+                    height: 36,
+                    width: 36,
+                    excavate: true,
+                  }}
+                  className="w-full h-full"
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Only send {depositCurrency} to this address. Sending any other asset may result in permanent loss.
-              </p>
+
+              <div className="w-full space-y-2">
+                <Label>Your {depositCurrency} Address</Label>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-muted rounded-md font-mono text-xs break-all w-full">{walletAddress}</div>
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(walletAddress)}>
+                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="mx-auto w-48 h-48 bg-secondary/20 rounded-lg flex items-center justify-center">
-              <QrCode className="h-24 w-24 text-muted-foreground" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <AlertCircle className="h-4 w-4 text-destructive mr-2" />
-                <Label className="text-destructive">Important</Label>
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <h4 className="font-medium">Important Information</h4>
               </div>
               <ul className="text-sm space-y-1 text-muted-foreground list-disc pl-5">
                 <li>Minimum deposit: 1.00 {depositCurrency}</li>
                 <li>Deposits typically confirm within 5-30 minutes</li>
                 <li>Always verify the address before sending</li>
+                <li>Only send {depositCurrency} to this address</li>
               </ul>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDepositOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="sm:flex-1" onClick={() => setIsDepositOpen(false)}>
               Close
             </Button>
-            <Button asChild>
-              <a href="https://explorer.solana.com" target="_blank" rel="noopener noreferrer">
+            <Button className="sm:flex-1" asChild>
+              <a
+                href={`https://explorer.solana.com/address/${walletAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 View on Explorer
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
@@ -496,7 +597,10 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
       <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Withdraw {withdrawCurrency}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpRight className="h-5 w-5 text-primary" />
+              Withdraw {withdrawCurrency}
+            </DialogTitle>
             <DialogDescription>Send {withdrawCurrency} to an external wallet</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -547,7 +651,7 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
               </Select>
             </div>
 
-            <div className="rounded-lg bg-secondary/20 p-3 space-y-2">
+            <div className="rounded-lg bg-muted/50 p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Amount</span>
                 <span>
@@ -558,6 +662,7 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
                 <span>Network Fee</span>
                 <span>~0.000005 SOL</span>
               </div>
+              <Separator className="my-2" />
               <div className="flex justify-between text-sm font-medium">
                 <span>You will receive</span>
                 <span>
@@ -566,11 +671,11 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsWithdrawOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="sm:flex-1" onClick={() => setIsWithdrawOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={executeWithdraw} disabled={!withdrawAmount}>
+            <Button className="sm:flex-1" onClick={executeWithdraw} disabled={!withdrawAmount}>
               Withdraw
             </Button>
           </DialogFooter>
@@ -581,7 +686,10 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
       <Dialog open={isSwapOpen} onOpenChange={setIsSwapOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Swap Currencies</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              Swap Currencies
+            </DialogTitle>
             <DialogDescription>Exchange one cryptocurrency for another</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -595,7 +703,18 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
                   <SelectContent>
                     {walletBalances.map((currency) => (
                       <SelectItem key={currency.currency} value={currency.currency}>
-                        {currency.currency}
+                        <div className="flex items-center gap-2">
+                          {currency.icon && (
+                            <div className="w-4 h-4 rounded-full overflow-hidden">
+                              <img
+                                src={currency.icon || "/placeholder.svg"}
+                                alt={currency.currency}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          {currency.currency}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -605,6 +724,7 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
                   placeholder="0.00"
                   value={swapAmount}
                   onChange={(e) => setSwapAmount(e.target.value)}
+                  className="flex-1"
                 />
               </div>
               <div className="text-xs text-right text-muted-foreground">
@@ -615,16 +735,16 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
 
             <div className="flex justify-center">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="rounded-full"
+                className="rounded-full h-10 w-10 border-dashed"
                 onClick={() => {
                   const temp = swapFromCurrency
                   setSwapFromCurrency(swapToCurrency)
                   setSwapToCurrency(temp)
                 }}
               >
-                <RefreshCw className="h-4 w-4" />
+                <ArrowDownUp className="h-4 w-4" />
               </Button>
             </div>
 
@@ -638,31 +758,47 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
                   <SelectContent>
                     {walletBalances.map((currency) => (
                       <SelectItem key={currency.currency} value={currency.currency}>
-                        {currency.currency}
+                        <div className="flex items-center gap-2">
+                          {currency.icon && (
+                            <div className="w-4 h-4 rounded-full overflow-hidden">
+                              <img
+                                src={currency.icon || "/placeholder.svg"}
+                                alt={currency.currency}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          {currency.currency}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={
-                    swapAmount
-                      ? swapFromCurrency === "USDC" && swapToCurrency === "SOL"
-                        ? (Number.parseFloat(swapAmount) / 100).toFixed(2)
-                        : (Number.parseFloat(swapAmount) * 100).toFixed(2)
-                      : ""
-                  }
-                  readOnly
-                />
+                <Input type="number" placeholder="0.00" value={swapEstimate} readOnly className="flex-1 bg-muted/50" />
               </div>
             </div>
 
-            <div className="rounded-lg bg-secondary/20 p-3 space-y-2">
+            <div className="rounded-lg bg-muted/50 p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Exchange Rate</span>
+                <span className="flex items-center gap-1">
+                  Exchange Rate
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Current market rate with 0.1% spread</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
                 <span>
-                  {swapFromCurrency === "USDC" && swapToCurrency === "SOL" ? "1 USDC ≈ 0.01 SOL" : "1 SOL ≈ 100 USDC"}
+                  {swapFromCurrency === "USDC" && swapToCurrency === "SOL"
+                    ? "1 USDC ≈ 0.01 SOL"
+                    : swapFromCurrency === "SOL" && swapToCurrency === "USDC"
+                      ? "1 SOL ≈ 100 USDC"
+                      : "1 " + swapFromCurrency + " ≈ 1 " + swapToCurrency}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
@@ -673,18 +809,108 @@ const { transactions,isLoading:isFetchTransactionsLoading } = useFetchTransactio
                 <span>Slippage Tolerance</span>
                 <span>0.5%</span>
               </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between text-sm font-medium">
+                <span>Estimated Receive</span>
+                <span>
+                  {swapEstimate || "0.00"} {swapToCurrency}
+                </span>
+              </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSwapOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="sm:flex-1" onClick={() => setIsSwapOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={executeSwap} disabled={!swapAmount}>
-              Swap
+            <Button className="sm:flex-1" onClick={executeSwap} disabled={!swapAmount || isSwapLoading}>
+              {isSwapLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                "Swap"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+// Currency Card Component
+interface CurrencyCardProps {
+  currency: {
+    currency: string
+    balance: number
+    value: number
+    icon?: string
+    mintAddress?: string
+    change: string
+    changePositive: boolean
+  }
+  onDeposit: (currency: string) => void
+  onWithdraw: (currency: string) => void
+}
+
+function CurrencyCard({ currency, onDeposit, onWithdraw }: CurrencyCardProps) {
+  return (
+    <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200">
+      <CardContent className="p-0">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                {currency.icon ? (
+                  <img
+                    src={currency.icon || "/placeholder.svg"}
+                    alt={currency.currency}
+                    className="w-6 h-6 object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-bold">{currency.currency}</span>
+                )}
+              </div>
+              <span className="font-medium">{currency.currency}</span>
+            </div>
+            <Badge
+              variant="outline"
+              className={
+                currency.changePositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+              }
+            >
+              {currency.change}
+            </Badge>
+          </div>
+          <div className="text-2xl font-bold mb-1">
+            {currency.balance.toLocaleString()} {currency.currency}
+          </div>
+          <div className="text-sm text-muted-foreground">${currency.value.toLocaleString()}</div>
+        </div>
+
+        <div className="flex border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 rounded-none py-3 h-auto text-xs font-medium"
+            onClick={() => onDeposit(currency.currency)}
+          >
+            <ArrowDownRight className="mr-1 h-3 w-3" />
+            Deposit
+          </Button>
+          <div className="w-px bg-border h-10"></div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 rounded-none py-3 h-auto text-xs font-medium"
+            onClick={() => onWithdraw(currency.currency)}
+          >
+            <ArrowUpRight className="mr-1 h-3 w-3" />
+            Withdraw
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

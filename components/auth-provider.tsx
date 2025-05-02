@@ -19,6 +19,10 @@ import apiClient from '@/lib/api/client';
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  beneficiaries?: UserDetails['beneficiaries'];
+  tokens?: UserDetails['tokens'];
+
+
   userDetails: UserDetails | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { publicKey, connected, connecting, disconnecting, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
   const router = useRouter();
-  
+
   // Atoms
   const [token, setToken] = useAtom(tokenAtom);
   const [user, setUser] = useAtom(userAtom);
@@ -48,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useAtom(isLoadingAuthAtom);
   const [error, setError] = useAtom(authErrorAtom);
   const [walletAddr, setWalletAddress] = useAtom(walletAddressAtom);
-  
+
   // Local state
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [hasAttemptedAutoLogin, setHasAttemptedAutoLogin] = useState(false);
@@ -102,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const address = publicKey.toString();
     setWalletAddress(address);
-    
+
     setIsLoading(true);
     setError(null);
     setIsAuthenticating(true);
@@ -129,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const address = publicKey.toString();
     setWalletAddress(address);
-    
+
     setIsLoading(true);
     setError(null);
     setIsAuthenticating(true);
@@ -156,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const address = publicKey.toString();
     setWalletAddress(address);
-    
+
     setIsLoading(true);
     setError(null);
     setIsAuthenticating(true);
@@ -234,7 +238,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     token,
     user,
+    beneficiaries: userDetails?.beneficiaries,
+    tokens: userDetails?.tokens,
     userDetails,
+
     isAuthenticated,
     isLoading: isLoading || connecting || disconnecting,
     error,
