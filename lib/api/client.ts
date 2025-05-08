@@ -1,8 +1,9 @@
 import axios from "axios"
+import { config } from "@/lib/config"
 
 // Create an axios instance with default config
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://api.paymint.app",
+  baseURL: config.api.baseUrl,
   headers: {
     "Content-Type": "application/json",
   },

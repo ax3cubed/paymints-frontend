@@ -1,4 +1,4 @@
-import { TokenBalance } from "@/types"
+import { TokenBalance } from "@/types/invoice"
 import { fetchMint } from "@solana-program/token"
 import { address, Rpc, SolanaRpcApi } from "@solana/kit"
 import { PublicKey } from "@solana/web3.js"

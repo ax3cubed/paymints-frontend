@@ -14,7 +14,7 @@ export default function NotFound() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center w-full">
       <div className="mx-auto max-w-md space-y-6">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold">404 - Page Not Found</h1>

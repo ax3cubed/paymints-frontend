@@ -1,0 +1,97 @@
+{
+    "invoices": [
+      {
+        "id": "INV-0025",
+        "invoiceNo": "INV-0025",
+        "invoiceType": "standard",
+        "invoiceTitle": "Web Development",
+        "invoiceDescription": "Full-stack development services for company website",
+        "invoiceStatus": "0",
+        "invoiceMintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "clientName": "CryptoDAO Collective",
+        "clientWallet": "8xrt6LGom3xRwNKgdAXakJQ9Bvmw4hEQFo7ne7Q9RyPd",
+        "clientEmail": "contact@cryptodao.com",
+        "clientAddress": "123 Blockchain St, Crypto City",
+        "isClientInformation": true,
+        "isExpirable": true,
+        "dueDate": "2025-04-30",
+        "tipOptionEnabled": true,
+        "invoiceVisibility": "private",
+        "autoEmailReceipt": true,
+        "QRcodeEnabled": true,
+        "services": [
+          {
+            "name": "Website Development",
+            "description": "Full-stack development of company website",
+            "quantity": 1,
+            "price": 2500
+          }
+        ],
+        "subtotal": 2500,
+        "discount": 0,
+        "taxRate": 0,
+        "taxAmount": 0,
+        "totalAmount": 2500,
+        "createdAt": "2025-04-15T12:00:00Z",
+        "updatedAt": "2025-04-15T12:00:00Z",
+        "createdBy": {
+          "id": 1,
+          "address": "5Uj9vWwTGYsBqNFyxMJU8S5GjgwLdetJrhdWGUUALmL9"
+        },
+        "invoicePays": []
+      },
+      {
+        "id": "INV-0024",
+        "invoiceNo": "INV-0024",
+        "invoiceType": "standard",
+        "invoiceTitle": "UI/UX Design",
+        "invoiceDescription": "Design services for mobile application",
+        "invoiceStatus": "1",
+        "invoiceMintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "clientName": "Solana Builders",
+        "clientWallet": "7xrt6LGom3xRwNKgdAXakJQ9Bvmw4hEQFo7ne7Q9RyPd",
+        "clientEmail": "info@solanabuilders.com",
+        "clientAddress": "456 DeFi Ave, Web3 Valley",
+        "isClientInformation": true,
+        "isExpirable": true,
+        "dueDate": "2025-04-15",
+        "tipOptionEnabled": false,
+        "invoiceVisibility": "private",
+        "autoEmailReceipt": true,
+        "QRcodeEnabled": true,
+        "services": [
+          {
+            "name": "UI Design",
+            "description": "User interface design for mobile app",
+            "quantity": 1,
+            "price": 800
+          },
+          {
+            "name": "UX Research",
+            "description": "User experience research and testing",
+            "quantity": 1,
+            "price": 450
+          }
+        ],
+        "subtotal": 1250,
+        "discount": 0,
+        "taxRate": 0,
+        "taxAmount": 0,
+        "totalAmount": 1250,
+        "createdAt": "2025-04-01T10:30:00Z",
+        "updatedAt": "2025-04-01T10:30:00Z",
+        "createdBy": {
+          "id": 1,
+          "address": "5Uj9vWwTGYsBqNFyxMJU8S5GjgwLdetJrhdWGUUALmL9"
+        },
+        "invoicePays": [
+          {
+            "payer": "7xrt6LGom3xRwNKgdAXakJQ9Bvmw4hEQFo7ne7Q9RyPd",
+            "amount": "1250",
+            "timestamp": "2025-04-10T14:22:00Z"
+          }
+        ]
+      }
+    ]
+  }
+  

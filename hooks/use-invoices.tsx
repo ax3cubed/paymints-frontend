@@ -1,217 +1,218 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useCallback } from "react"
+import { useToast } from "@/components/ui/use-toast"
 import { invoiceApi } from "@/lib/api/invoice"
-import type { 
-  Invoice, 
-  InvoiceService, 
-  InvoiceType, 
-  InvoiceVisibility,
-  InvoiceResponse,
-  InvoicesResponse 
-} from "@/types"
-import { useLoadingContext } from "@/providers/loading-provider"
+import type { CreateInvoiceData, UpdateInvoiceData } from "@/types/invoice"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useAtom } from "jotai"
+import { isInvoiceActiveAtom, selectedInvoiceAtom } from "@/store/invoice-store"
 
-// Define type-safe interfaces for our invoice data
-interface CreateInvoiceData {
-  invoiceType: InvoiceType
-  invoiceTitle: string
-  invoiceImage?: string
-  invoiceDescription?: string
-  invoiceMintAddress: string
-  clientName: string
-  clientWallet: string
-  clientEmail?: string
-  clientAddress: string
-  isClientInformation: boolean
-  isExpirable: boolean
-  dueDate?: string
-  discountCodes?: any[]
-  tipOptionEnabled: boolean
-  invoiceVisibility: InvoiceVisibility
-  autoEmailReceipt: boolean
-  QRcodeEnabled: boolean
-  services: InvoiceService[]
-  subtotal: number
-  discount: number
-  taxRate: number
-  taxAmount: number
-  totalAmount: number
-}
-
-type UpdateInvoiceData = Partial<CreateInvoiceData>
-
-// Define loading messages for different operations
-const LOADING_MESSAGES = {
-  FETCH_INVOICES: "Loading invoices...",
-  CREATE_INVOICE: "Creating invoice...",
-  UPDATE_INVOICE: "Updating invoice...",
-  DELETE_INVOICE: "Deleting invoice...",
-  FETCH_INVOICE_BY_ID: "Loading invoice details...",
-}
-
+/**
+ * Custom hook for managing invoices
+ */
 export function useInvoices() {
+  const { toast } = useToast()
   const queryClient = useQueryClient()
-  const { startLoading, stopLoading } = useLoadingContext()
-  
-  // Local loading states for more granular control
-  const [isCreating, setIsCreating] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false)
 
-  // Get all invoices
-  const {
-    data: invoicesData,
-    error: invoicesError,
-    refetch: refetchInvoices,
-    isFetching: isQueryFetching,
-  } = useQuery<InvoicesResponse>({
+  // Query for fetching all invoices
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["invoices"],
     queryFn: async () => {
-      setIsLoadingInvoices(true)
-      startLoading("default", LOADING_MESSAGES.FETCH_INVOICES)
-      try {
-        return await invoiceApi.getAllInvoices()
-      } finally {
-        stopLoading()
-        setIsLoadingInvoices(false)
-      }
+      const response = await invoiceApi.getAllInvoices()
+      return response.data.invoices
     },
   })
 
-  // Create invoice mutation
-  const createInvoiceMutation = useMutation<InvoiceResponse, Error, CreateInvoiceData>({
-    mutationFn: async (data) => {
-      setIsCreating(true)
-      startLoading("electric", LOADING_MESSAGES.CREATE_INVOICE)
-      try {
-        return await invoiceApi.createInvoice(data)
-      } finally {
-        stopLoading()
-        setIsCreating(false)
-      }
-    },
+  // Mutation for creating an invoice
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data: CreateInvoiceData) => invoiceApi.createInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      toast({
+        title: "Success",
+        description: "Invoice created successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create invoice: ${error.message}`,
+        variant: "destructive",
+      })
     },
   })
 
-  // Update invoice mutation
-  const updateInvoiceMutation = useMutation<
-    InvoiceResponse, 
-    Error, 
-    { id: string; data: UpdateInvoiceData }
-  >({
-    mutationFn: async ({ id, data }) => {
-      setIsUpdating(true)
-      startLoading("default", LOADING_MESSAGES.UPDATE_INVOICE)
-      try {
-        return await invoiceApi.updateInvoice(id, data)
-      } finally {
-        stopLoading()
-        setIsUpdating(false)
-      }
-    },
-    onSuccess: (_, variables) => {
+  // Mutation for updating an invoice
+  const updateInvoiceMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateInvoiceData }) => invoiceApi.updateInvoice(id, data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.invalidateQueries({ queryKey: ["invoice", variables.id] })
+      toast({
+        title: "Success",
+        description: "Invoice updated successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update invoice: ${error.message}`,
+        variant: "destructive",
+      })
     },
   })
 
-  // Delete invoice mutation
-  const deleteInvoiceMutation = useMutation<unknown, Error, string>({
-    mutationFn: async (id) => {
-      setIsDeleting(true)
-      startLoading("bolt", LOADING_MESSAGES.DELETE_INVOICE)
-      try {
-        return await invoiceApi.deleteInvoice(id)
-      } finally {
-        stopLoading()
-        setIsDeleting(false)
-      }
-    },
-    onSuccess: (_, id) => {
+  // Mutation for activating an invoice
+  const activateInvoiceMutation = useMutation({
+    mutationFn: (id: string) => invoiceApi.activateInvoice(id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.removeQueries({ queryKey: ["invoice", id] })
+      toast({
+        title: "Success",
+        description: "Invoice activated successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to activate invoice: ${error.message}`,
+        variant: "destructive",
+      })
     },
   })
 
-  // Create invoice
+  // Mutation for deleting an invoice
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: (id: string) => invoiceApi.deleteInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      toast({
+        title: "Success",
+        description: "Invoice deleted successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete invoice: ${error.message}`,
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Function to create an invoice
   const createInvoice = useCallback(
-    (invoiceData: CreateInvoiceData) => {
-      return createInvoiceMutation.mutateAsync(invoiceData)
+    async (data: CreateInvoiceData) => {
+      const response = await createInvoiceMutation.mutateAsync(data)
+      return response.data.invoice
     },
     [createInvoiceMutation],
   )
 
-  // Update invoice
+  // Function to update an invoice
   const updateInvoice = useCallback(
-    (id: string, invoiceData: UpdateInvoiceData) => {
-      return updateInvoiceMutation.mutateAsync({ id, data: invoiceData })
+    async (id: string, data: UpdateInvoiceData) => {
+      const response = await updateInvoiceMutation.mutateAsync({ id, data })
+      return response.data.invoice
     },
     [updateInvoiceMutation],
   )
 
-  // Delete invoice
+  // Function to activate an invoice
+  const activateInvoice = useCallback(
+    async (id: string) => {
+      const response = await activateInvoiceMutation.mutateAsync(id)
+      return response.data.invoice
+    },
+    [activateInvoiceMutation],
+  )
+
+  // Function to delete an invoice
   const deleteInvoice = useCallback(
-    (id: string) => {
-      return deleteInvoiceMutation.mutateAsync(id)
+    async (id: string) => {
+      await deleteInvoiceMutation.mutateAsync(id)
     },
     [deleteInvoiceMutation],
   )
 
   return {
-    invoices: invoicesData?.data.invoices || [],
-    isLoading: isLoadingInvoices || isQueryFetching,
-    error: invoicesError,
-    refetch: refetchInvoices,
+    invoices: data || [],
+    isLoading,
+    error: error as Error | null,
+    refetch,
     createInvoice,
     updateInvoice,
+    activateInvoice,
     deleteInvoice,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    createError: createInvoiceMutation.error,
-    updateError: updateInvoiceMutation.error,
-    deleteError: deleteInvoiceMutation.error,
+    isCreating: createInvoiceMutation.isPending,
+    isUpdating: updateInvoiceMutation.isPending,
+    isActivating: activateInvoiceMutation.isPending,
+    isDeleting: deleteInvoiceMutation.isPending,
   }
 }
 
+/**
+ * Custom hook for managing a single invoice
+ */
 export function useInvoice(id: string | undefined) {
-  const { startLoading, stopLoading } = useLoadingContext()
-  const [isLoadingInvoice, setIsLoadingInvoice] = useState(false)
-  
-  // Get invoice by ID
-  const {
-    data: invoiceData,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery<InvoiceResponse>({
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const [selectedInvoice, setSelectedInvoice] = useAtom(selectedInvoiceAtom)
+  const [isActive, setIsActive] = useAtom(isInvoiceActiveAtom)
+
+  // Query for fetching a single invoice
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["invoice", id],
     queryFn: async () => {
-      if (!id) {
-        throw new Error("No invoice ID provided")
-      }
-      
-      setIsLoadingInvoice(true)
-      startLoading("default", LOADING_MESSAGES.FETCH_INVOICE_BY_ID)
-      try {
-        return await invoiceApi.getInvoiceById(id)
-      } finally {
-        stopLoading()
-        setIsLoadingInvoice(false)
-      }
+      if (!id) return null
+      const response = await invoiceApi.getInvoiceById(id)
+      return response.data.invoice
     },
     enabled: !!id,
   })
+  
+  // Use useEffect to handle the onSuccess logic
+  useCallback(() => {
+    if (data) {
+      setSelectedInvoice(data)
+      setIsActive(data.invoiceStatus === "1")
+    }
+  }, [data, setSelectedInvoice, setIsActive])
+
+  // Mutation for activating an invoice
+  const activateInvoiceMutation = useMutation({
+    mutationFn: (id: string) => invoiceApi.activateInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] })
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      setIsActive(true)
+      toast({
+        title: "Success",
+        description: "Invoice activated successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to activate invoice: ${error.message}`,
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Function to activate an invoice
+  const activateInvoice = useCallback(async () => {
+    if (!id) return
+    await activateInvoiceMutation.mutateAsync(id)
+  }, [id, activateInvoiceMutation])
 
   return {
-    invoice: invoiceData?.data.invoice,
-    isLoading: isLoadingInvoice || isFetching,
-    error,
+    invoice: data || null,
+    isLoading,
+    error: error as Error | null,
     refetch,
+    activateInvoice,
+    isActivating: activateInvoiceMutation.isPending,
+    isActive,
   }
 }

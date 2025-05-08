@@ -1,30 +1,15 @@
 "use client"
-
-import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Plus, Search, Filter, Download, CheckCircle2, Clock, AlertCircle, FileText } from "lucide-react"
 
 export default function InvoicingDashboard() {
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [streamEnabled, setStreamEnabled] = useState(false)
+  const router = useRouter()
 
   const invoices = [
     {
@@ -78,104 +63,17 @@ export default function InvoicingDashboard() {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="container py-10 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Invoicing</h1>
           <p className="text-muted-foreground">Manage your invoices and get paid in USDC.</p>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Invoice
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Invoice</DialogTitle>
-                <DialogDescription>
-                  Create an invoice to send to your client. They'll receive a notification to pay in USDC.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="client" className="text-right">
-                    Client
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cryptodao">CryptoDAO Collective</SelectItem>
-                      <SelectItem value="solana">Solana Builders</SelectItem>
-                      <SelectItem value="web3">Web3 Ventures</SelectItem>
-                      <SelectItem value="defi">DeFi Protocol</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="wallet" className="text-right">
-                    Wallet Address
-                  </Label>
-                  <Input id="wallet" placeholder="Client's Solana wallet address" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">
-                    Amount (USDC)
-                  </Label>
-                  <Input id="amount" placeholder="0.00" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea id="description" placeholder="Describe the services provided" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="dueDate" className="text-right">
-                    Due Date
-                  </Label>
-                  <Input id="dueDate" type="date" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="stream" className="text-right">
-                    Enable Streaming
-                  </Label>
-                  <div className="col-span-3 flex items-center space-x-2">
-                    <Switch id="stream" checked={streamEnabled} onCheckedChange={setStreamEnabled} />
-                    <Label htmlFor="stream">Payment will stream over time instead of lump sum</Label>
-                  </div>
-                </div>
-                {streamEnabled && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="streamPeriod" className="text-right">
-                      Stream Period
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select period" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsCreateOpen(false)}>Create Invoice</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => router.push("/dashboard/invoices/create")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Invoice
+          </Button>
         </div>
       </div>
 
@@ -275,6 +173,7 @@ export default function InvoicingDashboard() {
                       <div
                         key={i}
                         className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
                       >
                         <div className="font-medium">{invoice.id}</div>
                         <div className="col-span-2">{invoice.client}</div>
@@ -318,6 +217,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>
@@ -350,6 +250,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>
@@ -382,6 +283,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>

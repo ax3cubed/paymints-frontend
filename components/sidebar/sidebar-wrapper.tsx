@@ -30,7 +30,7 @@ export const SidebarWrapper = ({ open, disconnectWallet, walletAddress }: { open
               <div className="flex items-center">
                 <Avatar className="cursor-pointer flex justify-center items-center align-middle">
                   <AvatarImage width={32} height={32} src="/placeholder.svg?height=32&width=32"  alt="User avatar" />
-                  <div className="text-xl font-bold bg-clip-text text-transparent ml-2">aymint</div>
+                  <div className="text-xl font-bold bg-clip-text gradient-textt ml-2">aymint</div>
                   <AvatarFallback>PM</AvatarFallback>
                 </Avatar>
               </div>

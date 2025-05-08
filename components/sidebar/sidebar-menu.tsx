@@ -85,7 +85,7 @@ const navigationItems:NavigationItem[] = [
   {
     title: "Invoicing",
     icon: Receipt,
-    path: "/dashboard/invoicing",
+    path: "/dashboard/invoices",
     tooltip: "Invoicing",
      
   },
