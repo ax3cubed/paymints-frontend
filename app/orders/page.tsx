@@ -190,7 +190,7 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Button asChild>
-            <Link href="/dashboard/orders/templates">
+            <Link href="/orders/templates">
               <Plus className="mr-2 h-4 w-4" />
               Create Order
             </Link>
@@ -266,7 +266,7 @@ export default function OrdersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/invoices/preview/${order.id}`}>
+                                <Link href={`/invoices/preview/${order.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
@@ -333,7 +333,7 @@ export default function OrdersPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/invoices/preview/${order.id}`}>
+                                  <Link href={`/invoices/preview/${order.id}`}>
                                     <Eye className="mr-2 h-4 w-4" />
                                     View
                                   </Link>
@@ -400,7 +400,7 @@ export default function OrdersPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/invoices/preview/${order.id}`}>
+                                  <Link href={`/invoices/preview/${order.id}`}>
                                     <Eye className="mr-2 h-4 w-4" />
                                     View
                                   </Link>
@@ -467,7 +467,7 @@ export default function OrdersPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/invoices/preview/${order.id}`}>
+                                  <Link href={`/invoices/preview/${order.id}`}>
                                     <Eye className="mr-2 h-4 w-4" />
                                     View
                                   </Link>

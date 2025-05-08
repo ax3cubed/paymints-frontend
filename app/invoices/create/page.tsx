@@ -11,7 +11,7 @@ export default function CreateInvoicePage() {
   const router = useRouter()
 
   const handleClose = () => {
-    router.push("/dashboard/invoices")
+    router.push("/invoices")
   }
 
   return (
@@ -26,7 +26,7 @@ export default function CreateInvoicePage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-1">
-          <Breadcrumb segments={[{ name: "Invoices", href: "/dashboard/invoices" }, { name: "Create Invoice" }]} />
+          <Breadcrumb segments={[{ name: "Invoices", href: "/invoices" }, { name: "Create Invoice" }]} />
           <h1 className="text-3xl font-bold tracking-tight">Create Invoice</h1>
           <p className="text-muted-foreground">Create a new invoice to send to your client</p>
         </div>

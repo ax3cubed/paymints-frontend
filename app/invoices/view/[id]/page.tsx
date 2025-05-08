@@ -63,7 +63,7 @@ export default function InvoiceViewPage() {
         <div className="flex flex-col items-center gap-4 py-12">
           <h2 className="text-2xl font-bold">Invoice Not Found</h2>
           <p className="text-muted-foreground">The requested invoice could not be found.</p>
-          <Button onClick={() => router.push("/dashboard/invoices")}>Return to Invoices</Button>
+          <Button onClick={() => router.push("/invoices")}>Return to Invoices</Button>
         </div>
       </div>
     )

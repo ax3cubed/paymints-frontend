@@ -70,7 +70,7 @@ export default function InvoicingDashboard() {
           <p className="text-muted-foreground">Manage your invoices and get paid in USDC.</p>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button onClick={() => router.push("/dashboard/invoices/create")}>
+          <Button onClick={() => router.push("/invoices/create")}>
             <Plus className="mr-2 h-4 w-4" />
             Create Invoice
           </Button>
@@ -173,7 +173,7 @@ export default function InvoicingDashboard() {
                       <div
                         key={i}
                         className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
-                        onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
+                        onClick={() => router.push(`/invoices/view/${invoice.id}`)}
                       >
                         <div className="font-medium">{invoice.id}</div>
                         <div className="col-span-2">{invoice.client}</div>
@@ -217,7 +217,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
-                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
+                          onClick={() => router.push(`/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>
@@ -250,7 +250,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
-                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
+                          onClick={() => router.push(`/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>
@@ -283,7 +283,7 @@ export default function InvoicingDashboard() {
                         <div
                           key={i}
                           className="grid grid-cols-6 p-4 items-center hover:bg-secondary/10 transition-colors cursor-pointer"
-                          onClick={() => router.push(`/dashboard/invoices/view/${invoice.id}`)}
+                          onClick={() => router.push(`/invoices/view/${invoice.id}`)}
                         >
                           <div className="font-medium">{invoice.id}</div>
                           <div className="col-span-2">{invoice.client}</div>

@@ -24,6 +24,8 @@ import {
   Tag,
   CreditCardIcon,
   QrCode,
+  Settings,
+  Gift,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -35,11 +37,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Stepper } from "@/components/ui/stepper"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from 'sonner';
 import { useInvoices } from "@/hooks/use-invoices"
 import { useFieldArray as useRHFFieldArray } from "react-hook-form"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import type { InvoiceType } from "@/types/invoice"
 
 // Define the schema for each step
 const invoiceDetailsSchema = z.object({
@@ -113,10 +116,47 @@ const pageVariants = {
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -20 },
 }
+// Define token type
+interface Token {
+  address: string;
+  symbol: string;
+  name: string;
+  icon: string;
+  bgColor: string;
+  iconText: string;
+}
+
+// Create a list of payment tokens
+const paymentTokens: Token[] = [
+  {
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    symbol: "USDC",
+    name: "USD Coin",
+    icon: "$",
+    bgColor: "bg-blue-500",
+    iconText: "$"
+  },
+  {
+    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    symbol: "USDT",
+    name: "Tether USD",
+    icon: "$",
+    bgColor: "bg-green-500",
+    iconText: "$"
+  },
+  {
+    address: "So11111111111111111111111111111111111111112",
+    symbol: "SOL",
+    name: "Solana",
+    icon: "S",
+    bgColor: "bg-purple-500",
+    iconText: "S"
+  }
+];
 
 export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const [activeStep, setActiveStep] = useState(0)
-  const { toast } = useToast()
+
   const { createInvoice, isCreating } = useInvoices()
   const router = useRouter()
 
@@ -200,10 +240,9 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     if (isValid) {
       setActiveStep((prev) => Math.min(prev + 1, steps.length - 1))
     } else {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Please fill in all required fields correctly.",
-        variant: "destructive",
+
       })
     }
   }
@@ -215,17 +254,16 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const onSubmit = async (data: CreateInvoiceData) => {
     try {
       const invoice = await createInvoice(data)
-      toast({
-        title: "Invoice Created",
+      toast.success("Invoice Created", {
         description: "Your invoice has been created successfully.",
       })
       // Redirect to the invoice view page
       router.push(`/invoices/view/${invoice.id}`)
     } catch (error) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
+
         description: "Failed to create invoice. Please try again.",
-        variant: "destructive",
+
       })
     }
   }
@@ -302,6 +340,18 @@ function InvoiceDetailsStep() {
     watch,
     setValue,
   } = useFormContext<CreateInvoiceData>()
+  // Create a list of invoice types with name and value
+  const invoiceTypes = [
+    { value: "standard" as InvoiceType, name: "Standard Invoice", icon: Receipt },
+    { value: "milestone" as InvoiceType, name: "Milestone Payment", icon: ClipboardList },
+    { value: "subscription" as InvoiceType, name: "Subscription", icon: Calendar },
+    { value: "donation" as InvoiceType, name: "Donation", icon: Gift },
+    { value: "custom" as InvoiceType, name: "Custom", icon: Settings },
+  ] as const
+  // Add this near the top of your file after the imports
+
+
+
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -326,24 +376,14 @@ function InvoiceDetailsStep() {
                     <SelectValue placeholder="Select invoice type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">
-                      <div className="flex items-center">
-                        <Receipt className="mr-2 h-4 w-4 text-primary" />
-                        <span>Standard Invoice</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="milestone">
-                      <div className="flex items-center">
-                        <ClipboardList className="mr-2 h-4 w-4 text-primary" />
-                        <span>Milestone Payment</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="subscription">
-                      <div className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4 text-primary" />
-                        <span>Subscription</span>
-                      </div>
-                    </SelectItem>
+                    {invoiceTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center">
+                          <type.icon className="mr-2 h-4 w-4 text-primary" />
+                          <span>{type.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.invoiceType && <p className="text-sm text-destructive mt-1">{errors.invoiceType.message}</p>}
@@ -362,38 +402,83 @@ function InvoiceDetailsStep() {
                     <SelectValue placeholder="Select payment token" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                          $
+                    {paymentTokens.map((token) => (
+                      <SelectItem key={token.address} value={token.address}>
+                        <div className="flex items-center">
+                          <div className={`w-5 h-5 rounded-full ${token.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}>
+                            {token.iconText}
+                          </div>
+                          <span>{token.symbol}</span>
                         </div>
-                        <span>USDC</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                          $
-                        </div>
-                        <span>USDT</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="So11111111111111111111111111111111111111112">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                          S
-                        </div>
-                        <span>SOL</span>
-                      </div>
-                    </SelectItem>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.invoiceMintAddress && (
                   <p className="text-sm text-destructive mt-1">{errors.invoiceMintAddress.message}</p>
                 )}
               </div>
-            </div>
 
+              {/* Add the selected token address display */}
+
+            </div>
+            <div className="space-y-2">
+              {/* Add the selected token address display */}
+              {watch("invoiceMintAddress") && (
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      {(() => {
+                        const selectedToken = paymentTokens.find(token => token.address === watch("invoiceMintAddress"));
+                        return (
+                          <>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white text-xs font-bold ${selectedToken?.bgColor}`}>
+                              {selectedToken?.iconText}
+                            </div>
+                            <div>
+                              <p className="font-medium">{selectedToken?.symbol}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">Selected Payment Token</p>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex items-center">
+                      <div className="bg-muted/70 px-3 py-1.5 rounded font-mono text-xs overflow-hidden text-ellipsis text-green-300 max-w-[180px]">
+                        {watch("invoiceMintAddress").slice(0, 8)}...{watch("invoiceMintAddress").slice(-8)}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(watch("invoiceMintAddress"));
+                          toast.success("Address copied", {
+                            richColors: true,
+                            description: "Token address copied to clipboard",
+                          });
+                        }}
+                        className="ml-2 p-1.5 hover:bg-muted rounded-md"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="lucide lucide-copy"
+                        >
+                          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="invoiceTitle" className="text-sm font-medium">
                 Invoice Title
@@ -899,18 +984,16 @@ function VisibilityStep() {
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    invoiceVisibility === "private"
-                      ? "border-primary bg-primary/5"
-                      : "border-muted hover:border-muted-foreground/30"
-                  }`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${invoiceVisibility === "private"
+                    ? "border-primary bg-primary/5"
+                    : "border-muted hover:border-muted-foreground/30"
+                    }`}
                   onClick={() => setValue("invoiceVisibility", "private")}
                 >
                   <div className="flex items-start">
                     <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-0.5 ${
-                        invoiceVisibility === "private" ? "border-primary" : "border-muted-foreground/50"
-                      }`}
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-0.5 ${invoiceVisibility === "private" ? "border-primary" : "border-muted-foreground/50"
+                        }`}
                     >
                       {invoiceVisibility === "private" && (
                         <motion.div
@@ -930,18 +1013,16 @@ function VisibilityStep() {
                 </div>
 
                 <div
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    invoiceVisibility === "public"
-                      ? "border-primary bg-primary/5"
-                      : "border-muted hover:border-muted-foreground/30"
-                  }`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${invoiceVisibility === "public"
+                    ? "border-primary bg-primary/5"
+                    : "border-muted hover:border-muted-foreground/30"
+                    }`}
                   onClick={() => setValue("invoiceVisibility", "public")}
                 >
                   <div className="flex items-start">
                     <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-0.5 ${
-                        invoiceVisibility === "public" ? "border-primary" : "border-muted-foreground/50"
-                      }`}
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-0.5 ${invoiceVisibility === "public" ? "border-primary" : "border-muted-foreground/50"
+                        }`}
                     >
                       {invoiceVisibility === "public" && (
                         <motion.div
@@ -1038,31 +1119,21 @@ function ReviewStep() {
                 <div className="font-medium">{formValues.invoiceType}</div>
               </div>
 
+
               <div className="space-y-1">
                 <div className="text-muted-foreground">Payment Token</div>
                 <div className="font-medium flex items-center">
-                  {formValues.invoiceMintAddress === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                        $
-                      </div>
-                      USDC
-                    </>
-                  ) : formValues.invoiceMintAddress === "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                        $
-                      </div>
-                      USDT
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center mr-2 text-white text-xs font-bold">
-                        S
-                      </div>
-                      SOL
-                    </>
-                  )}
+                  {(() => {
+                    const selectedToken = paymentTokens.find(token => token.address === formValues.invoiceMintAddress);
+                    return (
+                      <>
+                        <div className={`w-4 h-4 rounded-full ${selectedToken?.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}>
+                          {selectedToken?.iconText}
+                        </div>
+                        {selectedToken?.symbol}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

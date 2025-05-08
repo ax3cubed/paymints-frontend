@@ -111,7 +111,7 @@ export default function OrderTemplatesPage() {
     console.log("Form submitted:", formData)
     setIsCreateOpen(false)
     setCurrentStep(1)
-    router.push("/dashboard/orders")
+    router.push("/orders")
   }
 
   const templates = [
@@ -351,7 +351,7 @@ export default function OrderTemplatesPage() {
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Button asChild>
-            <a href="/dashboard/orders">View All Orders</a>
+            <a href="/orders">View All Orders</a>
           </Button>
         </div>
       </div>

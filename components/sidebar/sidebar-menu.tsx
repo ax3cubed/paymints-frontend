@@ -57,19 +57,19 @@ const navigationItems:NavigationItem[] = [
   {
     title: "Wallet",
     icon: Wallet,
-    path: "/dashboard/wallet",
+    path: "/wallet",
     tooltip: "Wallet"
   },
   {
     title: "Transactions",
     icon: ArrowLeftRight,
-    path: "/dashboard/transactions",
+    path: "/transactions",
     tooltip: "Transactions"
   },
   {
     title: "Analytics",
     icon: BarChart3,
-    path: "/dashboard/analytics",
+    path: "/analytics",
     tooltip: "Analytics"
   },
   {
@@ -78,33 +78,33 @@ const navigationItems:NavigationItem[] = [
   {
     title: "Orders",
     icon: ShoppingCart,
-    path: "/dashboard/orders",
+    path: "/orders",
     tooltip: "Orders",
      
   },
   {
     title: "Invoicing",
     icon: Receipt,
-    path: "/dashboard/invoices",
+    path: "/invoices",
     tooltip: "Invoicing",
      
   },
   {
     title: "Payroll",
     icon: Users,
-    path: "/dashboard/payroll",
+    path: "/payroll",
     tooltip: "Payroll"
   },
   {
     title: "Treasury",
     icon: Landmark,
-    path: "/dashboard/treasury",
+    path: "/treasury",
     tooltip: "Treasury"
   },
   {
     title: "Credit",
     icon: CreditCard,
-    path: "/dashboard/credit",
+    path: "/credit",
     tooltip: "Credit"
   },
   {
@@ -113,13 +113,13 @@ const navigationItems:NavigationItem[] = [
   {
     title: "Profile",
     icon: UserCircle,
-    path: "/dashboard/profile",
+    path: "/profile",
     tooltip: "Profile",
   },
   {
     title: "Settings",
     icon: Settings,
-    path: "/dashboard/settings",
+    path: "/settings",
     tooltip: "Settings"
   }
 ];

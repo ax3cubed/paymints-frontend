@@ -378,7 +378,7 @@ export default function WalletPage() {
                 <CardTitle>Recent Transactions</CardTitle>
               </div>
               <Button variant="outline" size="sm" asChild className="gap-1">
-                <a href="/dashboard/transactions">
+                <a href="/transactions">
                   View All
                   <ChevronRight className="h-4 w-4" />
                 </a>

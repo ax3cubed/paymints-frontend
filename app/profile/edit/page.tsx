@@ -89,7 +89,7 @@ export default function ProfileEditPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex items-center">
           <Button variant="ghost" size="icon" asChild className="mr-2">
-            <Link href="/dashboard/profile">
+            <Link href="/profile">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -100,7 +100,7 @@ export default function ProfileEditPage() {
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Button variant="outline" asChild>
-            <Link href="/dashboard/profile">Cancel</Link>
+            <Link href="/profile">Cancel</Link>
           </Button>
           <Button>Save Changes</Button>
         </div>
