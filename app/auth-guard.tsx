@@ -17,6 +17,8 @@ export function AuthGuard({
   redirectTo,
 }: AuthGuardProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
+console.log("AuthGuard", { isAuthenticated, isLoading, user });
+
   const router = useRouter();
   const { startLoading, stopLoading } = useLoadingContext();
 

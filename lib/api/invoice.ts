@@ -21,7 +21,7 @@ export const invoiceApi = {
 	 */
 	getAllInvoices: async (): Promise<ApiResponse<GetInvoicesResponse>> => {
 		if (config.api.useMockData) {
-			return mockRequest<GetInvoicesResponse>("/invoice", { method: "GET" });
+			return mockRequest<GetInvoicesResponse>("/api/invoice", { method: "GET" });
 		}
 		const response = await apiClient.get<ApiResponse<GetInvoicesResponse>>(
 			"/invoice"
@@ -36,12 +36,12 @@ export const invoiceApi = {
 		id: string
 	): Promise<ApiResponse<GetInvoiceResponse>> => {
 		if (config.api.useMockData) {
-			return mockRequest<GetInvoiceResponse>(`/invoice/${id}`, {
+			return mockRequest<GetInvoiceResponse>(`/api/invoice/${id}`, {
 				method: "GET",
 			});
 		}
 		const response = await apiClient.get<ApiResponse<GetInvoiceResponse>>(
-			`/invoice/${id}`
+			`/api/invoice/${id}`
 		);
 		return response.data;
 	},
@@ -53,13 +53,13 @@ export const invoiceApi = {
 		data: CreateInvoiceData
 	): Promise<ApiResponse<CreateInvoiceResponse>> => {
 		if (config.api.useMockData) {
-			return mockRequest<CreateInvoiceResponse>("/invoice", {
+			return mockRequest<CreateInvoiceResponse>("/api/invoice", {
 				method: "POST",
 				body: JSON.stringify(data),
 			});
 		}
 		const response = await apiClient.post<ApiResponse<CreateInvoiceResponse>>(
-			"/invoice",
+			"/api/invoice",
 			data
 		);
 		return response.data;
@@ -73,13 +73,13 @@ export const invoiceApi = {
 		data: UpdateInvoiceData
 	): Promise<ApiResponse<UpdateInvoiceResponse>> => {
 		if (config.api.useMockData) {
-			return mockRequest<UpdateInvoiceResponse>(`/invoice/${id}`, {
+			return mockRequest<UpdateInvoiceResponse>(`/api/invoice/${id}`, {
 				method: "PUT",
 				body: JSON.stringify(data),
 			});
 		}
 		const response = await apiClient.put<ApiResponse<UpdateInvoiceResponse>>(
-			`/invoice/${id}`,
+			`/api/invoice/${id}`,
 			data
 		);
 		return response.data;
@@ -92,12 +92,12 @@ export const invoiceApi = {
 		id: string
 	): Promise<ApiResponse<DeleteInvoiceResponse>> => {
 		if (config.api.useMockData) {
-			return mockRequest<DeleteInvoiceResponse>(`/invoice/${id}`, {
+			return mockRequest<DeleteInvoiceResponse>(`/api/invoice/${id}`, {
 				method: "DELETE",
 			});
 		}
 		const response = await apiClient.delete<ApiResponse<DeleteInvoiceResponse>>(
-			`/invoice/${id}`
+			`/api/invoice/${id}`
 		);
 		return response.data;
 	},
@@ -110,13 +110,13 @@ export const invoiceApi = {
 	): Promise<ApiResponse<UpdateInvoiceResponse>> => {
 		const data = { invoiceStatus: "1" }; // Active status
 		if (config.api.useMockData) {
-			return mockRequest<UpdateInvoiceResponse>(`/invoice/${id}`, {
+			return mockRequest<UpdateInvoiceResponse>(`/api/invoice/${id}`, {
 				method: "PUT",
 				body: JSON.stringify(data),
 			});
 		}
 		const response = await apiClient.put<ApiResponse<UpdateInvoiceResponse>>(
-			`/invoice/${id}`,
+			`/api/invoice/${id}`,
 			data
 		);
 		return response.data;
@@ -136,7 +136,7 @@ async function mockRequest<T>(
 	const method = options.method || "GET";
 
 	// Handle different endpoints
-	if (endpoint === "/invoice" && method === "GET") {
+	if (endpoint === "/api/invoice" && method === "GET") {
 		return {
 			success: true,
 			message: "Invoices retrieved successfully",
@@ -165,7 +165,7 @@ async function mockRequest<T>(
 		};
 	}
 
-	if (endpoint === "/invoice" && method === "POST") {
+	if (endpoint === "/api/invoice" && method === "POST") {
 		const body = JSON.parse(options.body as string);
 		const newInvoice = {
 			...body,

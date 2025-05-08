@@ -5,6 +5,7 @@ import "./globals.css"
 import { cn } from "@/lib/utils"
 import GlobalProvider from "@/app/global-provider"
 import { createStore } from "jotai"
+import AuthWrapper from "./auth-wrapper"
 
 
  
@@ -26,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <GlobalProvider>{children}</GlobalProvider>
+      <GlobalProvider>
+          <AuthWrapper>{children}</AuthWrapper>
+        </GlobalProvider>
       </body>
     </html>
   )

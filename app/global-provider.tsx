@@ -3,7 +3,6 @@
 import type React from "react"
 import type { ReactNode } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
-import { AuthGuard } from "@/app/auth-guard"
 import dynamic from "next/dynamic"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ReactQueryProvider } from "@/components/react-query-provider"

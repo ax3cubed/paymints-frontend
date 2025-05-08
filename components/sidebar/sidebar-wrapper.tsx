@@ -15,7 +15,7 @@ import { AnimatePresence, motion } from "motion/react"
 
 export const SidebarWrapper = ({ open, disconnectWallet, walletAddress }: { open: boolean, disconnectWallet: () => void, walletAddress: string | null }) => {
   return (
-    <Sidebar collapsible="icon" variant="floating">
+    <Sidebar collapsible="icon" variant="floating" >
       <SidebarHeader className="p-4">
       <AnimatePresence mode="wait" initial={false}>
           <motion.div 

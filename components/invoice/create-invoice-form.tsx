@@ -37,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Stepper } from "@/components/ui/stepper"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { toast } from 'sonner';
+import { toast } from "sonner"
 import { useInvoices } from "@/hooks/use-invoices"
 import { useFieldArray as useRHFFieldArray } from "react-hook-form"
 import { Badge } from "@/components/ui/badge"
@@ -46,7 +46,7 @@ import type { InvoiceType } from "@/types/invoice"
 
 // Define the schema for each step
 const invoiceDetailsSchema = z.object({
-  invoiceType: z.enum(["standard", "milestone", "subscription", "custom"]),
+  invoiceType: z.enum(["standard", "milestone", "subscription", "custom", "donation"]),
   invoiceTitle: z.string().min(1, "Title is required"),
   invoiceDescription: z.string().optional(),
   invoiceMintAddress: z.string().min(1, "Mint address is required"),
@@ -116,14 +116,15 @@ const pageVariants = {
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -20 },
 }
+
 // Define token type
 interface Token {
-  address: string;
-  symbol: string;
-  name: string;
-  icon: string;
-  bgColor: string;
-  iconText: string;
+  address: string
+  symbol: string
+  name: string
+  icon: string
+  bgColor: string
+  iconText: string
 }
 
 // Create a list of payment tokens
@@ -134,7 +135,7 @@ const paymentTokens: Token[] = [
     name: "USD Coin",
     icon: "$",
     bgColor: "bg-blue-500",
-    iconText: "$"
+    iconText: "$",
   },
   {
     address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
@@ -142,7 +143,7 @@ const paymentTokens: Token[] = [
     name: "Tether USD",
     icon: "$",
     bgColor: "bg-green-500",
-    iconText: "$"
+    iconText: "$",
   },
   {
     address: "So11111111111111111111111111111111111111112",
@@ -150,13 +151,12 @@ const paymentTokens: Token[] = [
     name: "Solana",
     icon: "S",
     bgColor: "bg-purple-500",
-    iconText: "S"
-  }
-];
+    iconText: "S",
+  },
+]
 
 export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const [activeStep, setActiveStep] = useState(0)
-
   const { createInvoice, isCreating } = useInvoices()
   const router = useRouter()
 
@@ -251,17 +251,18 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     setActiveStep((prev) => Math.max(prev - 1, 0))
   }
 
-  const onSubmit = async (data: CreateInvoiceData) => {
+  const handleCreateInvoice = async () => {
     try {
+      const data = methods.getValues()
       const invoice = await createInvoice(data)
-      toast.success("Invoice Created", {
+      toast("Invoice Created", {
+
         description: "Your invoice has been created successfully.",
       })
       // Redirect to the invoice view page
       router.push(`/invoices/view/${invoice.id}`)
     } catch (error) {
       toast.error("Error", {
-
         description: "Failed to create invoice. Please try again.",
 
       })
@@ -273,7 +274,7 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
       <div className="space-y-8">
         <Stepper steps={steps} activeStep={activeStep} className="px-1 mb-8" />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep}
@@ -309,7 +310,12 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isCreating} className="px-6 bg-green-600 hover:bg-green-700">
+                <Button
+                  type="button"
+                  onClick={handleCreateInvoice}
+                  disabled={isCreating}
+                  className="px-6 bg-green-600 hover:bg-green-700"
+                >
                   {isCreating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -325,7 +331,7 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
               )}
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </FormProvider>
   )
@@ -348,8 +354,6 @@ function InvoiceDetailsStep() {
     { value: "donation" as InvoiceType, name: "Donation", icon: Gift },
     { value: "custom" as InvoiceType, name: "Custom", icon: Settings },
   ] as const
-  // Add this near the top of your file after the imports
-
 
 
 
@@ -370,7 +374,9 @@ function InvoiceDetailsStep() {
                 </Label>
                 <Select
                   value={watch("invoiceType")}
-                  onValueChange={(value: "standard" | "milestone" | "subscription") => setValue("invoiceType", value)}
+                  onValueChange={(value: "standard" | "milestone" | "subscription" | "custom") =>
+                    setValue("invoiceType", value)
+                  }
                 >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Select invoice type" />
@@ -405,7 +411,9 @@ function InvoiceDetailsStep() {
                     {paymentTokens.map((token) => (
                       <SelectItem key={token.address} value={token.address}>
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full ${token.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}>
+                          <div
+                            className={`w-5 h-5 rounded-full ${token.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}
+                          >
                             {token.iconText}
                           </div>
                           <span>{token.symbol}</span>
@@ -418,10 +426,8 @@ function InvoiceDetailsStep() {
                   <p className="text-sm text-destructive mt-1">{errors.invoiceMintAddress.message}</p>
                 )}
               </div>
-
-              {/* Add the selected token address display */}
-
             </div>
+
             <div className="space-y-2">
               {/* Add the selected token address display */}
               {watch("invoiceMintAddress") && (
@@ -429,7 +435,9 @@ function InvoiceDetailsStep() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       {(() => {
-                        const selectedToken = paymentTokens.find(token => token.address === watch("invoiceMintAddress"));
+                        const selectedToken = paymentTokens.find(
+                          (token) => token.address === watch("invoiceMintAddress"),
+                        )
                         return (
                           <>
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white text-xs font-bold ${selectedToken?.bgColor}`}>
@@ -440,21 +448,21 @@ function InvoiceDetailsStep() {
                               <p className="text-xs text-muted-foreground mt-0.5">Selected Payment Token</p>
                             </div>
                           </>
-                        );
+                        )
                       })()}
                     </div>
                     <div className="flex items-center">
-                      <div className="bg-muted/70 px-3 py-1.5 rounded font-mono text-xs overflow-hidden text-ellipsis text-green-300 max-w-[180px]">
+                      <div className="bg-muted/70 px-3 py-1.5 rounded font-mono text-xs overflow-hidden text-ellipsis max-w-[180px] text-green-400">
                         {watch("invoiceMintAddress").slice(0, 8)}...{watch("invoiceMintAddress").slice(-8)}
                       </div>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(watch("invoiceMintAddress"));
+                          navigator.clipboard.writeText(watch("invoiceMintAddress"))
                           toast.success("Address copied", {
                             richColors: true,
                             description: "Token address copied to clipboard",
-                          });
+                          })
                         }}
                         className="ml-2 p-1.5 hover:bg-muted rounded-md"
                       >
@@ -479,6 +487,8 @@ function InvoiceDetailsStep() {
                 </div>
               )}
             </div>
+
+
             <div className="space-y-2">
               <Label htmlFor="invoiceTitle" className="text-sm font-medium">
                 Invoice Title
@@ -1119,20 +1129,21 @@ function ReviewStep() {
                 <div className="font-medium">{formValues.invoiceType}</div>
               </div>
 
-
               <div className="space-y-1">
                 <div className="text-muted-foreground">Payment Token</div>
                 <div className="font-medium flex items-center">
                   {(() => {
-                    const selectedToken = paymentTokens.find(token => token.address === formValues.invoiceMintAddress);
+                    const selectedToken = paymentTokens.find((token) => token.address === formValues.invoiceMintAddress)
                     return (
                       <>
-                        <div className={`w-4 h-4 rounded-full ${selectedToken?.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}>
+                        <div
+                          className={`w-4 h-4 rounded-full ${selectedToken?.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}
+                        >
                           {selectedToken?.iconText}
                         </div>
                         {selectedToken?.symbol}
                       </>
-                    );
+                    )
                   })()}
                 </div>
               </div>
