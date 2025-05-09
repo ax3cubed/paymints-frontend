@@ -24,7 +24,7 @@ export const invoiceApi = {
 			return mockRequest<GetInvoicesResponse>("/api/invoice", { method: "GET" });
 		}
 		const response = await apiClient.get<ApiResponse<GetInvoicesResponse>>(
-			"/invoice"
+			"/api/invoice"
 		);
 		return response.data;
 	},

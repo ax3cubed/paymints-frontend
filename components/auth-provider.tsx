@@ -21,18 +21,16 @@ interface AuthContextType {
   user: User | null;
   beneficiaries?: UserDetails['beneficiaries'];
   tokens?: UserDetails['tokens'];
-
-
   userDetails: UserDetails | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   connectWalletModal: () => void;
-  connectWallet: () => Promise<void>;
-  login: () => Promise<void>;
-  register: () => Promise<void>;
-  fetchUserDetails: () => Promise<void>;
-  logout: () => void;
+  connectWallet: () => Promise<{ success: boolean; error?: string }>;
+  login: () => Promise<{ success: boolean; error?: string }>;
+  register: () => Promise<{ success: boolean; error?: string }>;
+  fetchUserDetails: () => Promise<{ success: boolean; error?: any; data?: UserDetails }>;
+  logout: () => Promise<{ success: boolean; error?: any }>;
   isAuthenticating: boolean;
   clearError: () => void;
 }
@@ -40,36 +38,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const { publicKey, connected, connecting, disconnecting, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
-  const router = useRouter();
-
+  
   // Atoms
   const [token, setToken] = useAtom(tokenAtom);
   const [user, setUser] = useAtom(userAtom);
   const [userDetails, setUserDetails] = useAtom(userDetailsAtom);
-  const [isAuthenticated, setIsAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom); // Read-only derived atom
   const [isLoading, setIsLoading] = useAtom(isLoadingAuthAtom);
   const [error, setError] = useAtom(authErrorAtom);
   const [walletAddr, setWalletAddress] = useAtom(walletAddressAtom);
 
   // Local state
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [hasAttemptedAutoLogin, setHasAttemptedAutoLogin] = useState(false);
-
-  // Update isAuthenticated state based on token and user
-  useEffect(() => {
-    setToken(token ? token : null);
-  }, [token, user, setIsAuthenticated]);
-
-  // Update API client auth header when token changes
-  useEffect(() => {
-    if (token) {
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete apiClient.defaults.headers.common['Authorization'];
-    }
-  }, [token]);
+  const [initialSetupComplete, setInitialSetupComplete] = useState(false);
 
   // Clear error state
   const clearError = useCallback(() => {
@@ -81,102 +65,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setVisible(true);
   }, [setVisible]);
 
-  // Fetch user details (safe to call multiple times)
-  const fetchUserDetails = useCallback(async () => {
-    if (!token || !isAuthenticated) return;
+  // No need to manually synchronize isAuthenticated state as it's derived from tokenAtom and userAtom
 
-    setIsLoading(true);
-    try {
-      const response = await authApi.getUserDetails();
-      setUserDetails(response.data);
-    } catch (err) {
-      console.error('Failed to fetch user details:', err);
-      // Not setting error state here since this is secondary data
-    } finally {
-      setIsLoading(false);
+  // Update API client auth header when token changes
+  useEffect(() => {
+    if (token) {
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete apiClient.defaults.headers.common['Authorization'];
     }
-  }, [token, isAuthenticated, setIsLoading, setUserDetails]);
+  }, [token]);
 
-  // Connect wallet function
-  const connectWallet = useCallback(async () => {
+  // Synchronize wallet address with state
+  useEffect(() => {
+    if (connected && publicKey) {
+      setWalletAddress(publicKey.toString());
+    } else if (!connected) {
+      setWalletAddress(null);
+    }
+  }, [connected, publicKey, setWalletAddress]);
+
+  // Core authentication function - reused by other auth methods
+  const authenticateWithWallet = useCallback(async (authMethod: 'connect' | 'login' | 'register') => {
     if (!publicKey) {
       connectWalletModal();
-      return;
+      return { success: false };
     }
 
     const address = publicKey.toString();
     setWalletAddress(address);
-
+    
     setIsLoading(true);
     setError(null);
     setIsAuthenticating(true);
-
+    
     try {
-      const response = await authApi.connectUser(address);
+      let response;
+      
+      switch (authMethod) {
+        case 'connect':
+          response = await authApi.connectUser(address);
+          break;
+        case 'login':
+          response = await authApi.login(address);
+          break;
+        case 'register':
+          response = await authApi.register(address);
+          break;
+      }
+      
       setToken(response.data.token);
       setUser(response.data.user);
+      return { success: true };
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-      console.error('Connect wallet error:', err);
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : `Failed to ${authMethod} with wallet`;
+      setError(errorMessage);
+      console.error(`${authMethod} error:`, err);
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
       setIsAuthenticating(false);
     }
   }, [publicKey, setWalletAddress, setIsLoading, setError, setToken, setUser, connectWalletModal]);
 
-  // Login function
+  // Public authentication methods
+  const connectWallet = useCallback(async () => {
+    return authenticateWithWallet('connect');
+  }, [authenticateWithWallet]);
+
   const login = useCallback(async () => {
-    if (!publicKey) {
-      setError('Wallet not connected');
-      return;
-    }
-
-    const address = publicKey.toString();
-    setWalletAddress(address);
-
-    setIsLoading(true);
-    setError(null);
-    setIsAuthenticating(true);
-
-    try {
-      const response = await authApi.login(address);
-      setToken(response.data.token);
-      setUser(response.data.user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
-      console.error('Login error:', err);
-    } finally {
-      setIsLoading(false);
-      setIsAuthenticating(false);
-    }
-  }, [publicKey, setWalletAddress, setIsLoading, setError, setToken, setUser]);
-
-  // Register function
+    return authenticateWithWallet('login');
+  }, [authenticateWithWallet]);
+  
   const register = useCallback(async () => {
-    if (!publicKey) {
-      setError('Wallet not connected');
-      return;
-    }
+    return authenticateWithWallet('register');
+  }, [authenticateWithWallet]);
 
-    const address = publicKey.toString();
-    setWalletAddress(address);
+  // Fetch user details
+  const fetchUserDetails = useCallback(async () => {
+    if (!token || !isAuthenticated) return { success: false };
 
     setIsLoading(true);
-    setError(null);
-    setIsAuthenticating(true);
-
     try {
-      const response = await authApi.register(address);
-      setToken(response.data.token);
-      setUser(response.data.user);
+      const response = await authApi.getUserDetails();
+      setUserDetails(response.data);
+      return { success: true, data: response.data };
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register');
-      console.error('Register error:', err);
+      console.error('Failed to fetch user details:', err);
+      return { success: false, error: err };
     } finally {
       setIsLoading(false);
-      setIsAuthenticating(false);
     }
-  }, [publicKey, setWalletAddress, setIsLoading, setError, setToken, setUser]);
+  }, [token, isAuthenticated, setIsLoading, setUserDetails]);
 
   // Logout function
   const logout = useCallback(async () => {
@@ -195,37 +177,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Navigate to landing page
       router.push('/');
+      return { success: true };
     } catch (err) {
       console.error('Logout error:', err);
+      return { success: false, error: err };
     } finally {
       setIsLoading(false);
     }
   }, [setToken, setUser, setUserDetails, setWalletAddress, connected, disconnect, router]);
 
-  // Handle wallet connection changes
+  // Initial app setup & auto-login
   useEffect(() => {
-    // Update wallet address when publicKey changes
-    if (connected && publicKey) {
-      const address = publicKey.toString();
-      setWalletAddress(address);
-    } else if (!connected) {
-      setWalletAddress(null);
-    }
-  }, [connected, publicKey, setWalletAddress]);
-
-  // Auto-login if wallet is connected
-  useEffect(() => {
-    // Skip if we've already attempted auto-login or if auth is in progress
-    if (hasAttemptedAutoLogin || isAuthenticating || isLoading) {
+    // Skip if initial setup is complete or authentication is in progress
+    if (initialSetupComplete || isAuthenticating || isLoading) {
       return;
     }
 
-    // If wallet is connected but we're not authenticated, try to connect
-    if (connected && publicKey && !isAuthenticated && !token) {
-      setHasAttemptedAutoLogin(true);
-      connectWallet();
-    }
-  }, [connected, publicKey, isAuthenticated, token, isAuthenticating, isLoading, connectWallet, hasAttemptedAutoLogin]);
+    const attemptAutoLogin = async () => {
+      // If wallet is connected but we're not authenticated, try to connect
+      if (connected && publicKey && !isAuthenticated && !token) {
+        await connectWallet();
+      }
+      
+      setInitialSetupComplete(true);
+    };
+
+    attemptAutoLogin();
+  }, [connected, publicKey, isAuthenticated, token, isAuthenticating, isLoading, connectWallet, initialSetupComplete]);
 
   // Auto-fetch user details when authentication state changes
   useEffect(() => {
@@ -241,7 +219,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     beneficiaries: userDetails?.beneficiaries,
     tokens: userDetails?.tokens,
     userDetails,
-
     isAuthenticated,
     isLoading: isLoading || connecting || disconnecting,
     error,

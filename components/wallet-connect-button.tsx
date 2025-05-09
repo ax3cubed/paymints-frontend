@@ -36,12 +36,8 @@ export function WalletConnectButton({ id, className, variant = "outline", ...pro
     if (!address) return ""
     return `${address.slice(0, 4)}...${address.slice(-4)}`
   }
-  // Format wallet address for display
-  const formatAddress = (address: string | null) => {
-    if (!address) return ""
-    return `${address.slice(0, 4)}...${address.slice(-4)}`
-  }
-
+ console.log("WalletConnectButton", { isAuthenticated, walletAddress, isLoading, publicKey });
+ 
   if (isLoading) {
     return (
       <Button id={id} variant="outline" className={cn("gap-2", className)} disabled {...props}>
@@ -51,7 +47,7 @@ export function WalletConnectButton({ id, className, variant = "outline", ...pro
     )
   }
 
-  if (isAuthenticated && walletAddress) {
+  if (  walletAddress) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

@@ -7,7 +7,7 @@ import { walletAddressAtom } from "@/lib/store/wallet"
 import { useSidebar } from "@/components/ui/sidebar"
 import { SidebarWrapper } from "@/components/sidebar/sidebar-wrapper"
 import { DashboardHeader } from "@/components/header/dashboard-header"
-import { AuthGuard } from "./auth-guard"
+import { UnauthenticatedHeader } from "@/components/header/unauthenticated-header"
 
 export default function AuthWrapper({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading, logout: disconnectWallet } = useAuth()
@@ -28,19 +28,20 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
 
     // If not authenticated, just render the children without the dashboard layout
     if (!isAuthenticated) {
-        return <>{children}</>
+        return <div className="min-h-screen flex justify-center items-center flex-col w-full ">
+            <UnauthenticatedHeader />
+            {children}
+        </div>
     }
 
     // If authenticated, render with dashboard layout
     return (
-        <AuthGuard requiredAuth={true} redirectTo="/">
-            <div className="flex h-screen overflow-hidden w-full">
-                <SidebarWrapper open={open} disconnectWallet={disconnectWallet} walletAddress={walletAddress} />
-                <div className="flex-1 overflow-auto">
-                    <DashboardHeader walletAddress={walletAddress} disconnectWallet={disconnectWallet} />
-                    <main className="flex-1 p-6">{children}</main>
-                </div>
+        <div className="flex h-screen overflow-hidden w-full">
+            <SidebarWrapper open={open} disconnectWallet={disconnectWallet} walletAddress={walletAddress} />
+            <div className="flex-1 overflow-auto">
+                <DashboardHeader walletAddress={walletAddress} disconnectWallet={disconnectWallet} />
+                <main className="flex-1 p-6">{children}</main>
             </div>
-        </AuthGuard>
+        </div>
     )
 }

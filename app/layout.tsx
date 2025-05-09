@@ -4,9 +4,8 @@ import { Inter as FontSans } from "next/font/google"
 import "./globals.css"
 import { cn } from "@/lib/utils"
 import GlobalProvider from "@/app/global-provider"
-import { createStore } from "jotai"
 import AuthWrapper from "./auth-wrapper"
-
+  
 
  
 

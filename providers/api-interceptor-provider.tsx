@@ -3,6 +3,7 @@ import { tokenAtom } from '@/lib/store/auth';
 import { useAtom } from 'jotai';
 import { createContext, useContext, useEffect, ReactNode, JSX } from 'react';
 import { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { useRouter } from 'next/navigation';
 
 // Create a context for the API interceptor
 const ApiInterceptorContext = createContext<boolean | null>(null);
@@ -14,7 +15,7 @@ interface ApiInterceptorProviderProps {
 // Provider component to setup the interceptors
 export function ApiInterceptorProvider({ children }: ApiInterceptorProviderProps): JSX.Element {
   const [token, setToken] = useAtom(tokenAtom);
-  
+  const router = useRouter(); // Assuming you have a router instance available
   useEffect(() => {
     // Response interceptor
     const interceptor = apiClient.interceptors.response.use(
@@ -29,7 +30,7 @@ export function ApiInterceptorProvider({ children }: ApiInterceptorProviderProps
           
           // Clear token using the provider's atom
           setToken(null);
-          
+          router.push('/'); // Redirect to login page
           // You can handle redirection to login here, or let the auth guard handle it
         }
         
