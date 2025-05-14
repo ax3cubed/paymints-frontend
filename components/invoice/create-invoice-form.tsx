@@ -43,6 +43,8 @@ import { useFieldArray as useRHFFieldArray } from "react-hook-form"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import type { InvoiceType } from "@/types/invoice"
+import { useAuth } from "../auth-provider"
+import { formatCurrency } from "@/lib/utils"
 
 // Define the schema for each step
 const invoiceDetailsSchema = z.object({
@@ -128,31 +130,16 @@ interface Token {
 }
 
 // Create a list of payment tokens
-const paymentTokens: Token[] = [
-  {
-    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    symbol: "USDC",
-    name: "USD Coin",
-    icon: "$",
-    bgColor: "bg-blue-500",
-    iconText: "$",
-  },
-  {
-    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-    symbol: "USDT",
-    name: "Tether USD",
-    icon: "$",
-    bgColor: "bg-green-500",
-    iconText: "$",
-  },
-  {
-    address: "So11111111111111111111111111111111111111112",
-    symbol: "SOL",
-    name: "Solana",
-    icon: "S",
-    bgColor: "bg-purple-500",
-    iconText: "S",
-  },
+const tokenBgColors = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-pink-500",
+  "bg-yellow-500",
+  "bg-orange-500",
+  "bg-red-500",
+  "bg-teal-500",
+  "bg-indigo-500",
 ]
 
 export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
@@ -242,7 +229,6 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
     } else {
       toast.error("Validation Error", {
         description: "Please fill in all required fields correctly.",
-
       })
     }
   }
@@ -256,15 +242,13 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
       const data = methods.getValues()
       const invoice = await createInvoice(data)
       toast("Invoice Created", {
-
         description: "Your invoice has been created successfully.",
       })
       // Redirect to the invoice view page
-      router.push(`/invoices/view/${invoice.id}`)
+      router.push(`/invoices/view/${invoice.invoiceNo}`)
     } catch (error) {
       toast.error("Error", {
         description: "Failed to create invoice. Please try again.",
-
       })
     }
   }
@@ -354,8 +338,28 @@ function InvoiceDetailsStep() {
     { value: "donation" as InvoiceType, name: "Donation", icon: Gift },
     { value: "custom" as InvoiceType, name: "Custom", icon: Settings },
   ] as const
-
-
+  // Create a list of payment tokens with random color and icon text
+  const { tokens } = useAuth()
+  const paymentTokens =
+    tokens?.map((token) => {
+      // Pick a random color for each token
+      const bgColor = tokenBgColors[Math.floor(Math.random() * tokenBgColors.length)]
+      // Use the first letter of the symbol as icon text, fallback to "?"
+      const iconText = token.symbol?.[0]?.toUpperCase() || "?"
+      return {
+        currency: token.symbol,
+        balance: token.balance,
+        value: token.balance * 1, // Assuming 1:1 for simplicity
+        icon: token.imageUrl,
+        mintAddress: token.mintAddress,
+        change: Math.random() > 0.5 ? `+${(Math.random() * 5).toFixed(2)}%` : `-${(Math.random() * 5).toFixed(2)}%`,
+        changePositive: Math.random() > 0.5,
+        address: token.mintAddress,
+        symbol: token.symbol,
+        bgColor,
+        iconText,
+      }
+    }) || []
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -409,14 +413,14 @@ function InvoiceDetailsStep() {
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTokens.map((token) => (
-                      <SelectItem key={token.address} value={token.address}>
+                      <SelectItem key={token.mintAddress} value={token.mintAddress}>
                         <div className="flex items-center">
                           <div
-                            className={`w-5 h-5 rounded-full ${token.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}
+                            className={`w-5 h-5 rounded-full ${token} flex items-center justify-center mr-2 text-white text-xs font-bold`}
                           >
                             {token.iconText}
                           </div>
-                          <span>{token.symbol}</span>
+                          <span>{token.currency}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -487,7 +491,6 @@ function InvoiceDetailsStep() {
                 </div>
               )}
             </div>
-
 
             <div className="space-y-2">
               <Label htmlFor="invoiceTitle" className="text-sm font-medium">
@@ -631,6 +634,12 @@ function ServicesStep() {
   const services = watch("services")
   const subtotal = services.reduce((sum, service) => sum + service.quantity * service.price, 0)
 
+  // Get selected mint address and tokens
+  const invoiceMintAddress = watch("invoiceMintAddress")
+  const { tokens } = useAuth()
+  const selectedToken = tokens?.find(token => token.mintAddress === invoiceMintAddress)
+  const currencySymbol = selectedToken?.symbol || "$"
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <div className="space-y-2">
@@ -685,8 +694,8 @@ function ServicesStep() {
                             )}
                           </td>
                           <td className="p-3 text-right">{service?.quantity || 0}</td>
-                          <td className="p-3 text-right">${service?.price?.toFixed(2) || "0.00"}</td>
-                          <td className="p-3 text-right font-medium">${total.toFixed(2)}</td>
+                          <td className="p-3 text-right">{formatCurrency(service?.price, currencySymbol) || "0.00"}</td>
+                          <td className="p-3 text-right font-medium">{formatCurrency(total, currencySymbol)}</td>
                           <td className="p-3">
                             {fields.length > 1 && (
                               <Button
@@ -709,7 +718,7 @@ function ServicesStep() {
                       <td colSpan={3} className="p-3 text-right font-medium">
                         Subtotal:
                       </td>
-                      <td className="p-3 text-right font-medium">${subtotal.toFixed(2)}</td>
+                      <td className="p-3 text-right font-medium">{formatCurrency(subtotal, currencySymbol)}</td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -840,7 +849,8 @@ function ServicesStep() {
                   <div className="flex justify-between items-center w-full">
                     <span className="text-sm text-muted-foreground">Service Total:</span>
                     <span className="font-medium">
-                      ${(services[index]?.quantity * services[index]?.price || 0).toFixed(2)}
+                      {formatCurrency(services[index]?.quantity * services[index]?.price, currencySymbol)}
+
                     </span>
                   </div>
                 </CardFooter>
@@ -867,6 +877,11 @@ function PaymentOptionsStep() {
   const taxRate = watch("taxRate")
   const taxAmount = subtotal * (taxRate / 100)
   const totalAmount = subtotal + taxAmount
+
+  const invoiceMintAddress = watch("invoiceMintAddress")
+  const { tokens } = useAuth()
+  const selectedToken = tokens?.find(token => token.mintAddress === invoiceMintAddress)
+  const currencySymbol = selectedToken?.symbol || "$"
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -945,16 +960,16 @@ function PaymentOptionsStep() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>{formatCurrency(subtotal, currencySymbol)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Tax ({taxRate}%):</span>
-                    <span>${taxAmount.toFixed(2)}</span>
+                    <span>{formatCurrency(taxAmount, currencySymbol)}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-medium">
                     <span>Total:</span>
-                    <span>${totalAmount.toFixed(2)}</span>
+                    <span>{formatCurrency(totalAmount, currencySymbol)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -1106,7 +1121,28 @@ function VisibilityStep() {
 function ReviewStep() {
   const { watch } = useFormContext<CreateInvoiceData>()
   const formValues = watch()
-
+  // Create a list of payment tokens with random color and icon text
+  const { tokens } = useAuth()
+  const paymentTokens =
+    tokens?.map((token) => {
+      // Pick a random color for each token
+      const bgColor = tokenBgColors[Math.floor(Math.random() * tokenBgColors.length)]
+      // Use the first letter of the symbol as icon text, fallback to "?"
+      const iconText = token.symbol?.[0]?.toUpperCase() || "?"
+      return {
+      currency: token.symbol,
+        balance: token.balance,
+        value: token.balance * 1, // Assuming 1:1 for simplicity
+        icon: token.imageUrl,
+        mintAddress: token.mintAddress,
+        change: Math.random() > 0.5 ? `+${(Math.random() * 5).toFixed(2)}%` : `-${(Math.random() * 5).toFixed(2)}%`,
+        changePositive: Math.random() > 0.5,
+        address: token.mintAddress,
+        symbol: token.symbol,
+        bgColor,
+        iconText,
+      }
+    }) || []
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <div className="space-y-2">

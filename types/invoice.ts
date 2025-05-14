@@ -9,9 +9,29 @@ export type InvoiceType = "standard" | "donation" | "subscription" | "custom"| "
 
 /**
  * Invoice status enum
- * 0 = Draft, 1 = Active, 2 = Paid
+ * 0 = Draft, 1 = Processing, 2 = Completed
  */
-export type InvoiceStatus = "0" | "1" | "2"
+export type InvoiceStatus = "0" | "1" | "2" | "3"
+
+export type InvoiceStatusLabel = "Draft" | "Processing" | "Completed" | "Overdue" |"Unknown"
+
+/**
+ * Maps InvoiceStatus to human-readable label
+ */
+export function getInvoiceStatusLabel(status: InvoiceStatus): InvoiceStatusLabel {
+  switch (status) {
+    case "0":
+      return "Draft";
+    case "1":
+      return "Processing";
+    case "2":
+      return "Completed";
+    case "3":
+      return "Overdue";
+    default:
+      return "Unknown";
+  }
+}
 
 /**
  * Invoice visibility enum
@@ -123,11 +143,7 @@ export interface GetInvoiceResponse {
 }
 
 export interface CreateInvoiceResponse {
-  invoice: {
-    invoiceNo: string
-    invoiceTxHash: string
-    id: string
-  }
+  invoice: Invoice
 }
 
 export interface UpdateInvoiceResponse {

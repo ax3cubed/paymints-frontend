@@ -1,4 +1,5 @@
-import { TransactionInfo } from "@/types/invoice";
+
+import { TransactionInfo } from "@/types";
 import { address, Rpc, SolanaRpcApi } from "@solana/kit";
 import { PublicKey } from "@solana/web3.js";
 import { useEffect, useState } from "react";

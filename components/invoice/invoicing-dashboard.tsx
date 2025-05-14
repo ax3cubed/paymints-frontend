@@ -7,60 +7,31 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Filter, Download, CheckCircle2, Clock, AlertCircle, FileText } from "lucide-react"
+import { useInvoices } from "@/hooks/use-invoices"
+import { getInvoiceStatusLabel, InvoiceStatusLabel } from "@/types/invoice"
+
+// Type for invoice items
+export type DashboardInvoice = {
+  id: string;
+  client: string;
+  amount: string;
+  status: InvoiceStatusLabel;
+  dueDate: string;
+  created: string;
+};
 
 export default function InvoicingDashboard() {
   const router = useRouter()
+  const { invoices: invoiceData, isLoading } = useInvoices()
 
-  const invoices = [
-    {
-      id: "INV-0025",
-      client: "CryptoDAO Collective",
-      amount: "$2,500.00",
-      status: "Pending",
-      dueDate: "Apr 30, 2025",
-      created: "Apr 15, 2025",
-    },
-    {
-      id: "INV-0024",
-      client: "Solana Builders",
-      amount: "$1,250.00",
-      status: "Paid",
-      dueDate: "Apr 15, 2025",
-      created: "Apr 1, 2025",
-    },
-    {
-      id: "INV-0023",
-      client: "Web3 Ventures",
-      amount: "$3,750.00",
-      status: "Paid",
-      dueDate: "Apr 10, 2025",
-      created: "Mar 25, 2025",
-    },
-    {
-      id: "INV-0022",
-      client: "DeFi Protocol",
-      amount: "$750.00",
-      status: "Overdue",
-      dueDate: "Mar 31, 2025",
-      created: "Mar 15, 2025",
-    },
-    {
-      id: "INV-0021",
-      client: "NFT Marketplace",
-      amount: "$4,200.00",
-      status: "Paid",
-      dueDate: "Mar 15, 2025",
-      created: "Mar 1, 2025",
-    },
-    {
-      id: "INV-0020",
-      client: "Metaverse Studios",
-      amount: "$1,800.00",
-      status: "Paid",
-      dueDate: "Feb 28, 2025",
-      created: "Feb 15, 2025",
-    },
-  ]
+  const invoices: DashboardInvoice[] = invoiceData.map((invoice) => ({
+    id: invoice.invoiceNo || "",
+    client: invoice.clientName,
+    amount: `$${invoice.totalAmount}`,
+    status: getInvoiceStatusLabel(invoice.invoiceStatus || "0"),
+    dueDate: invoice.dueDate || "",
+    created: invoice.createdAt,
+  }))
 
   return (
     <div className="container py-10 space-y-8">
@@ -182,15 +153,16 @@ export default function InvoicingDashboard() {
                           <Badge
                             variant="outline"
                             className={
-                              invoice.status === "Paid"
+                              invoice.status === "Completed"
                                 ? "bg-success/20 text-success"
-                                : invoice.status === "Pending"
+                                : invoice.status === "Processing"
                                   ? "bg-secondary/20 text-muted-foreground"
                                   : "bg-destructive/20 text-destructive"
                             }
                           >
-                            {invoice.status === "Paid" && <CheckCircle2 className="mr-1 h-3 w-3" />}
-                            {invoice.status === "Pending" && <Clock className="mr-1 h-3 w-3" />}
+                            {invoice.status === "Draft" && <FileText className="mr-1 h-3 w-3" />}
+                            {invoice.status === "Completed" && <CheckCircle2 className="mr-1 h-3 w-3" />}
+                            {invoice.status === "Processing" && <Clock className="mr-1 h-3 w-3" />}
                             {invoice.status === "Overdue" && <AlertCircle className="mr-1 h-3 w-3" />}
                             {invoice.status}
                           </Badge>
@@ -212,7 +184,7 @@ export default function InvoicingDashboard() {
                   </div>
                   <div className="divide-y">
                     {invoices
-                      .filter((invoice) => invoice.status === "Pending")
+                      .filter((invoice) => invoice.status === "Processing")
                       .map((invoice, i) => (
                         <div
                           key={i}
@@ -245,7 +217,7 @@ export default function InvoicingDashboard() {
                   </div>
                   <div className="divide-y">
                     {invoices
-                      .filter((invoice) => invoice.status === "Paid")
+                      .filter((invoice) => invoice.status === "Completed")
                       .map((invoice, i) => (
                         <div
                           key={i}

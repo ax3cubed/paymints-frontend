@@ -1,3 +1,5 @@
+import { InvoiceStatus, InvoiceType, InvoiceVisibility } from "@/types/invoice"
+
 // User Types
 export interface User {
     id: number
@@ -56,9 +58,7 @@ export interface User {
   }
   
   // Invoice Types
-  export type InvoiceStatus = "0" | "1" | "2" // 0: Draft, 1: Sent, 2: Paid
-  export type InvoiceType = "standard" | "donation" | "subscription" | "custom"
-  export type InvoiceVisibility = "private" | "public"
+ 
   
   export interface InvoiceService {
     name: string
