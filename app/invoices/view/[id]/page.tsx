@@ -172,7 +172,7 @@ export default function InvoiceViewPage() {
           <div className="flex items-center justify-between w-full">
             <h1 className="text-3xl font-bold tracking-tight">Invoice {id}</h1>
             {!isActive && (
-              <Button onClick={handleActivate} disabled={false} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleActivate} disabled={isInvoiceActive} className="bg-green-600 hover:bg-green-700">
                 {isActivating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
