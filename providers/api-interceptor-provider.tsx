@@ -25,7 +25,7 @@ export function ApiInterceptorProvider({ children }: ApiInterceptorProviderProps
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         
         // If error is 401 Unauthorized and not already retrying 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
           originalRequest._retry = true;
           
           // Clear token using the provider's atom
