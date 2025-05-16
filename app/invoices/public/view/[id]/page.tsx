@@ -78,7 +78,7 @@ export default function PublicInvoicePage() {
   }
 
   return (
-    <div className="container py-10">
+    <div className="container py-10 mt-10">
       <motion.div
         className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8"
         initial={{ opacity: 0, y: -20 }}

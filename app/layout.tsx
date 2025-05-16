@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter as FontSans } from "next/font/google"
 import "./globals.css"
 import { cn } from "@/lib/utils"
@@ -9,7 +9,9 @@ import { GoogleTagManager } from '@next/third-parties/google'
 
 
 
-
+export const viewport: Viewport = {
+  themeColor: 'black',
+}
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",

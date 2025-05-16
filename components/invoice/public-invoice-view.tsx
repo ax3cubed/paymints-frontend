@@ -3,6 +3,7 @@
 import { QRCodeSVG } from "qrcode.react"
 import { Separator } from "@/components/ui/separator"
 import { Calendar, FileText, User, ArrowUpRight } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 
 interface PublicInvoiceViewProps {
   invoice: any
@@ -104,9 +105,9 @@ export function PublicInvoiceView({ invoice }: PublicInvoiceViewProps) {
                       )}
                     </td>
                     <td className="border px-4 py-3 text-right">{service.quantity}</td>
-                    <td className="border px-4 py-3 text-right">${service.price.toFixed(2)}</td>
+                    <td className="border px-4 py-3 text-right">{formatCurrency(service.unitPrice, service.currency ? service.currency : "$")}</td>
                     <td className="border px-4 py-3 text-right font-medium">
-                      ${(service.quantity * service.price).toFixed(2)}
+                      {formatCurrency(service.quantity * service.unitPrice, service.currency ? service.currency : "$")}
                     </td>
                   </tr>
                 ))}

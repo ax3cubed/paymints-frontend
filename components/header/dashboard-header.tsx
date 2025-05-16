@@ -15,7 +15,7 @@ import {
   LogOut,
   Bell,
   AlertCircle,
- 
+
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -29,9 +29,16 @@ import {
 import { useCluster } from "../cluster-provider"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Badge } from "../ui/badge"
-
+import { UnauthenticatedHeader } from "./unauthenticated-header"
+import { usePathname } from "next/navigation"
+import { publicRoute } from "@/utils/public-routes"
 
 export const DashboardHeader = ({ walletAddress, disconnectWallet }: { walletAddress: string | null, disconnectWallet: () => void }) => {
+  const pathname = usePathname()
+  // If on public invoice view, render unauthenticated header
+  if (pathname?.startsWith(publicRoute[0])) {
+    return <UnauthenticatedHeader />
+  }
 
   const { cluster, clusters, setCluster } = useCluster()
 

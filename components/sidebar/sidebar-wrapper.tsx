@@ -10,15 +10,21 @@ import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { formatAddress } from "@/lib/utils"
 import { AnimatePresence, motion } from "motion/react"
+import { usePathname } from "next/navigation"
+import { publicRoute } from "@/utils/public-routes"
 
 
 
 export const SidebarWrapper = ({ open, disconnectWallet, walletAddress }: { open: boolean, disconnectWallet: () => void, walletAddress: string | null }) => {
+  const pathname = usePathname()
+  if (pathname?.startsWith(publicRoute[0])) {
+    return null
+  }
   return (
     <Sidebar collapsible="icon" variant="floating" >
       <SidebarHeader className="p-4">
-      <AnimatePresence mode="wait" initial={false}>
-          <motion.div 
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
             key={open ? 'open' : 'closed'}
             initial={{ opacity: 0, x: open ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -29,7 +35,7 @@ export const SidebarWrapper = ({ open, disconnectWallet, walletAddress }: { open
             {open && (
               <div className="flex items-center">
                 <Avatar className="cursor-pointer flex justify-center items-center align-middle">
-                  <AvatarImage width={32} height={32} src="/placeholder.svg?height=32&width=32"  alt="User avatar" />
+                  <AvatarImage width={32} height={32} src="/placeholder.svg?height=32&width=32" alt="User avatar" />
                   <div className="text-xl font-bold bg-clip-text gradient-textt ml-2">aymint</div>
                   <AvatarFallback>PM</AvatarFallback>
                 </Avatar>
@@ -38,7 +44,7 @@ export const SidebarWrapper = ({ open, disconnectWallet, walletAddress }: { open
             {!open && (
               <div className="flex items-center">
                 <Avatar className="cursor-pointer flex justify-center items-center align-middle">
-                  <AvatarImage width={32} height={32} src="/placeholder.svg?height=32&width=32"  alt="User avatar" />
+                  <AvatarImage width={32} height={32} src="/placeholder.svg?height=32&width=32" alt="User avatar" />
                   <AvatarFallback>PM</AvatarFallback>
                 </Avatar>
               </div>

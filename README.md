@@ -42,6 +42,8 @@ Paymints Frontend is a next-generation web application designed to streamline di
 - **Data Visualization**: Interactive charts and analytics for financial insights.
 - **PDF Generation**: Export invoices and reports as PDFs.
 - **Theming**: Light/dark mode support for personalized experience.
+- **AI Credit Scoring & Lending**: AI-powered on-chain credit score, advance eligibility, transparent repayment, score factors, achievements, and personalized tips for borrowing power and financial reputation.
+- **Stablecoin Swaps with Perena**: Seamlessly swap between supported stablecoins using Perena, enabling flexible payroll, invoicing, and treasury operations with minimal slippage and fast settlement.
 
 ---
 
@@ -174,6 +176,18 @@ Refer to the codebase for all required variables.
    ```
 
 Deploy to Vercel, Netlify, or your preferred platform. Ensure environment variables are set in your deployment environment.
+
+---
+
+## 🧠 AI Credit Scoring & Lending
+Paymints features an innovative AI-powered credit scoring and lending system designed for the Web3 economy:
+- **AI Credit Score**: Your score is calculated using on-chain activity, payment history, work reputation, and DAO endorsements. The score is visualized in your dashboard and updated dynamically.
+- **Advance Eligibility**: Based on your credit score, you can request payment advances (short-term loans) directly from the platform. The maximum advance amount and terms are determined by your score and repayment history.
+- **Transparent Repayment**: Advances are repaid automatically from future invoices, with clear service fees and repayment schedules.
+- **Score Factors & Achievements**: See detailed breakdowns of what impacts your score, including positive factors (like perfect payment history, endorsements, and consistent work) and areas for improvement. Unlock achievements for milestones like perfect payer, trusted contributor, and more.
+- **Personalized Tips**: Get actionable suggestions to improve your score and increase your borrowing power, such as completing your profile, requesting endorsements, and maintaining payment consistency.
+
+This system empowers users to build on-chain reputation and access working capital, all within a secure, transparent, and user-friendly interface.
 
 ---
 
