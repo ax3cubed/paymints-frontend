@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -31,9 +31,12 @@ import {
   User,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { formatCurrency } from "@/lib/utils"
+import { Invoice } from "@/types/invoice"
+import { handleDownloadPDF } from "@/lib/pdf-template"
 
 interface InvoiceViewProps {
-  invoice: any
+  invoice: Invoice
   isActive: boolean
 }
 
@@ -42,9 +45,14 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const qrRef = useRef<SVGSVGElement | null>(null)
+
+
+  console.log({ isActive, invoice });
+  const isInvoiceActive = isActive || invoice.invoiceStatus === "1"
 
   // Generate a public link for the invoice
-  const publicLink = `${window.location.origin}/invoices/public/view/${invoice.id}`
+  const publicLink = `${window.location.origin}/invoices/public/view/${invoice.invoiceNo}`
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -61,13 +69,12 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
   }
 
   const handleDownload = () => {
+    handleDownloadPDF(invoice)
     toast({
-      title: "Downloading PDF",
-      description: "Your invoice PDF is being generated and downloaded.",
+      title: "PDF Downloaded",
+      description: "Your invoice PDF has been generated and downloaded.",
     })
-    // In a real implementation, this would generate and download a PDF
   }
-
   const handleSendEmail = () => {
     toast({
       title: "Email Sent",
@@ -76,10 +83,24 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
     // In a real implementation, this would send an email
   }
 
+  const handleDownloadQrCode = () => {
+    if (!qrRef.current) return
+    const svg = qrRef.current.outerHTML
+    const blob = new Blob([svg], { type: "image/svg+xml" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `invoice-qr-code-${invoice.id}.svg`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-6 pb-10">
       {/* Status Banner */}
-      {isActive ? (
+      {(isInvoiceActive) ? (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg p-4 flex items-center justify-between">
           <div className="flex items-center">
             <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
@@ -137,7 +158,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
           <Mail className="mr-2 h-4 w-4" />
           Send Email
         </Button>
-        {isActive && (
+        {(isInvoiceActive) && (
           <>
             <Button variant="outline" size="sm" onClick={() => setIsShareDialogOpen(true)}>
               <Share2 className="mr-2 h-4 w-4" />
@@ -177,12 +198,12 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
               <Badge
                 variant="outline"
                 className={
-                  isActive
+                  (isInvoiceActive)
                     ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 mt-2"
                     : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 mt-2"
                 }
               >
-                {isActive ? "Active" : "Draft"}
+                {(isInvoiceActive) ? "Active" : "Draft"}
               </Badge>
             </div>
           </div>
@@ -259,9 +280,9 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
                         )}
                       </td>
                       <td className="border px-4 py-3 text-right">{service.quantity}</td>
-                      <td className="border px-4 py-3 text-right">${service.price.toFixed(2)}</td>
+                      <td className="border px-4 py-3 text-right">{formatCurrency(service.unitPrice, invoice.currency ? invoice.currency : "$")}</td>
                       <td className="border px-4 py-3 text-right font-medium">
-                        ${(service.quantity * service.price).toFixed(2)}
+                        {formatCurrency((service.quantity * service.unitPrice), invoice.currency ? invoice.currency : "$")}
                       </td>
                     </tr>
                   ))}
@@ -274,16 +295,17 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
               <div className="w-full max-w-xs space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>${invoice.subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(invoice.subtotal, invoice.currency ? invoice.currency : "$")}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tax ({invoice.taxRate}%):</span>
-                  <span>${invoice.taxAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(invoice.taxAmount, invoice.currency ? invoice.currency : "$")}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total:</span>
-                  <span>${invoice.totalAmount.toFixed(2)}</span>
+
+                  <span>{formatCurrency(invoice.totalAmount, invoice.currency ? invoice.currency : "$")}</span>
                 </div>
               </div>
             </div>
@@ -298,15 +320,11 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
             <div className="bg-muted/20 p-4 rounded-lg">
               <p>
                 Please make payment to the following wallet address using{" "}
-                {invoice.invoiceMintAddress === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-                  ? "USDC"
-                  : invoice.invoiceMintAddress === "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-                    ? "USDT"
-                    : "SOL"}
+                {invoice.currency}
                 :
               </p>
               <div className="mt-2 p-3 bg-muted/40 rounded-md font-mono text-sm break-all">
-                {invoice.invoiceMintAddress}
+                {invoice.createdBy?.address || "Unknown Wallet Address"}
               </div>
               {invoice.isExpirable && invoice.dueDate && (
                 <div className="mt-4 flex items-center text-amber-600 dark:text-amber-400">
@@ -336,12 +354,26 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
           <p className="text-sm text-muted-foreground">
             This invoice was generated by SolPay. For questions, contact support@solpay.com
           </p>
+          {isInvoiceActive && invoice.invoiceTxHash && (
+            <div className="mt-4">
+              <a
+                href={`https://explorer.solana.com/tx/${invoice.invoiceTxHash}?cluster=devnet`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline hover:text-primary/80 text-sm"
+              >
+                View Transaction on Solana Explorer
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Share Dialog */}
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md w-full max-w-lg mx-auto p-6 bg-background rounded-lg shadow-lg flex flex-col gap-4"
+        >
           <DialogHeader>
             <DialogTitle>Share Invoice</DialogTitle>
             <DialogDescription>Share this invoice with your client via link, email, or QR code.</DialogDescription>
@@ -409,7 +441,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
                       value={publicLink}
                       size={200}
                       level="H"
-                      includeMargin
+                      marginSize={2}
                       imageSettings={{
                         src: "/placeholder.svg?key=vnm7p",
                         height: 24,
@@ -444,6 +476,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
           <div className="flex flex-col items-center justify-center py-4">
             <div className="bg-white p-6 rounded-lg shadow-inner">
               <QRCodeSVG
+                ref={qrRef}
                 value={publicLink}
                 size={250}
                 level="H"
@@ -460,7 +493,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
             <div className="mt-4 w-full">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium">Invoice #{invoice.id}</p>
-                <p className="text-sm font-medium">${invoice.totalAmount.toFixed(2)}</p>
+                <p className="text-sm font-medium">  <span>{formatCurrency(invoice.totalAmount, invoice.currency ? invoice.currency : "$")}</span></p>
               </div>
               <div className="p-2 bg-muted rounded-md font-mono text-xs break-all">{publicLink}</div>
             </div>
@@ -469,7 +502,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
             <Button variant="outline" className="sm:flex-1" onClick={() => setIsQrCodeDialogOpen(false)}>
               Close
             </Button>
-            <Button className="sm:flex-1" onClick={() => handleDownload()}>
+            <Button className="sm:flex-1" onClick={handleDownloadQrCode}>
               Download QR Code
               <Download className="ml-2 h-4 w-4" />
             </Button>

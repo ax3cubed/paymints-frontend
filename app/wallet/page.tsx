@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -42,8 +42,11 @@ import { useWallet } from "@solana/wallet-adapter-react"
 import { useAuth } from "@/components/auth-provider"
 import { QRCodeSVG } from "qrcode.react"
 import { useTheme } from "next-themes"
+import { useSwap } from "@/hooks/use-swap"
+import { PublicKey, Transaction } from "@solana/web3.js"
+import { useTransactions } from "@/hooks/use-transactions"
 
- 
+
 export default function WalletPage() {
   const [isDepositOpen, setIsDepositOpen] = useState(false)
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
@@ -55,12 +58,32 @@ export default function WalletPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("")
   const [swapFromCurrency, setSwapFromCurrency] = useState("USDC")
   const [swapToCurrency, setSwapToCurrency] = useState("SOL")
+  const [swapFromIndex, setSwapFromIndex] = useState(0)
+  const [swapToIndex, setSwapToIndex] = useState(1)
   const [swapAmount, setSwapAmount] = useState("")
   const [swapEstimate, setSwapEstimate] = useState("")
   const [isSwapLoading, setIsSwapLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("all")
-  const { publicKey, sendTransaction } = useWallet?.() || { publicKey: null, sendTransaction: null }
+  const { publicKey, signTransaction } = useWallet?.() || { publicKey: null, sendTransaction: null, signTransaction: null }
   const { theme, setTheme } = useTheme()
+  const swapHook = useSwap()
+  const [swapStep, setSwapStep] = useState<'idle' | 'preparing' | 'signing' | 'submitting' | 'success' | 'error'>('idle')
+  const [swapResultDetails, setSwapResultDetails] = useState<any>(null)
+  const swapModalContentRef = useRef<HTMLDivElement>(null)
+  const { transactions, refetch } = useTransactions()
+  const getTokenIndex = (currency: string) => walletBalances.findIndex((token) => token.currency === currency)
+  const solanaPool = process.env.NEXT_PUBLIC_SOLANA_POOL_ADDRESS || "YourPoolAddressHere"
+
+  useEffect(() => {
+    setSwapFromIndex(getTokenIndex(swapToCurrency))
+  }, [swapFromCurrency])
+
+  useEffect(() => {
+    console.log("Transactions updated:", transactions)
+  }, [transactions,])
+  useEffect(() => {
+    setSwapToIndex(getTokenIndex(swapFromCurrency))
+  }, [swapToCurrency])
 
   // Safely use auth context or fallback to mock data
   const auth = useAuth()
@@ -130,59 +153,62 @@ export default function WalletPage() {
     setWithdrawAmount("")
   }
 
-  const executeSwap = () => {
+  // Replace executeSwap with real swap logic
+  const executeSwap = async () => {
+    if (!swapAmount || !swapFromCurrency || !swapToCurrency || !publicKey) return
     setIsSwapLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSwapLoading(false)
-      toast("Swap executed", {
-        description: `Successfully swapped ${swapAmount} ${swapFromCurrency} to ${swapEstimate} ${swapToCurrency}.`,
-        icon: <RefreshCw className="h-4 w-4 text-primary" />,
+    setSwapStep('preparing')
+    setSwapResultDetails(null)
+    try {
+      // Prepare swap request
+      const swapRequest = {
+        poolAddress: solanaPool,
+        inTokenIndex: swapFromIndex,
+        outTokenIndex: swapToIndex,
+        amountIn: Number(swapAmount),
+        minAmountOut: Number(swapEstimate),
+        userPublicKey: publicKey.toString(),
+      }
+      // Step 1: Prepare swap transaction
+      const swapResult = await swapHook.swapAsync(swapRequest)
+      setSwapStep('signing')
+      // Step 2: Sign transaction
+      const serializedTransaction = Buffer.from(swapResult.serializedTransaction, 'base64');
+      const transaction = Transaction.from(serializedTransaction);
+      const signedTransaction = signTransaction ? await signTransaction(transaction) : null;
+      if (!signedTransaction) throw new Error("Wallet not connected or unable to sign transaction.");
+      setSwapStep('submitting')
+      // Step 3: Submit signed transaction
+      const submitResult = await swapHook.submitAsync({ transaction: signedTransaction });
+      setSwapStep('success')
+      setSwapResultDetails({
+        signature: submitResult.signature,
+        amountIn: swapAmount,
+        from: swapFromCurrency,
+        to: swapToCurrency,
+        amountOut: swapEstimate,
       })
-      setIsSwapOpen(false)
       setSwapAmount("")
-    }, 1500)
+    } catch (e: any) {
+      setSwapStep('error')
+      setSwapResultDetails({ error: e?.message || "An error occurred." })
+    } finally {
+      setIsSwapLoading(false)
+    }
   }
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  const recentTransactions = [
-    {
-      type: "incoming",
-      description: "Payment from CryptoDAO Collective",
-      amount: "+2,500.00 USDC",
-      date: "Today, 10:24 AM",
-      status: "completed",
-      signature: "5UxV2MR7zzQiip4gAMXgEi51jmT7YLaqGS6NuhoZGnAFQ6RtVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
-    },
-    {
-      type: "outgoing",
-      description: "Withdrawal to External Wallet",
-      amount: "-500.00 USDC",
-      date: "Yesterday, 3:15 PM",
-      status: "completed",
-      signature: "3E1gZ3BXmefAUDmPVfYgtoUWeMFVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
-    },
-    {
-      type: "swap",
-      description: "Swap USDC to SOL",
-      amount: "-1,000.00 USDC / +10.00 SOL",
-      date: "Apr 10, 2025",
-      status: "completed",
-      signature: "2xVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
-    },
-    {
-      type: "incoming",
-      description: "Yield Earned",
-      amount: "+32.45 USDC",
-      date: "Apr 8, 2025",
-      status: "completed",
-      signature: "1gZ3BXmefAUDmPVfYgtoUWeMFVR9y6s4MSKiVjhAFQTRVEQmutC5jgqJF2AXYCFLjwSjLWFP6hxj9dKpYWAW",
-    },
-  ]
+  // Utility to get Solana explorer URL for a given address or signature
+  function getSolanaExplorerUrl(type: 'address' | 'tx', value: string) {
+    const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
+    const base = "https://explorer.solana.com";
+    let path = type === 'address' ? `/address/${value}` : `/tx/${value}`;
+    let cluster = network !== "mainnet-beta" ? `?cluster=${network}` : "";
+    return `${base}${path}${cluster}`;
+  }
 
   return (
     <div className="space-y-8 pb-10">
@@ -236,7 +262,7 @@ export default function WalletPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                    className="p-2   rounded-sm bg-white/20 hover:bg-white/30 text-white"
                     onClick={() => copyToClipboard(walletAddress)}
                   >
                     {copied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -244,7 +270,7 @@ export default function WalletPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                    className="p-2 rounded-sm bg-white/20 hover:bg-white/30 text-white"
                     onClick={() => setIsQrCodeOpen(true)}
                   >
                     <QrCode className="h-3 w-3" />
@@ -388,49 +414,47 @@ export default function WalletPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
-              {recentTransactions.map((tx, index) => (
-                <div key={index} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center 
-                        ${
-                          tx.type === "incoming"
+              {(transactions || []).map((tx: any, index: number) => {
+                const isOutgoing = tx.sender === walletAddress;
+                const isIncoming = tx.recipient === walletAddress;
+                const status = tx.error ? 'failed' : 'completed';
+                const description = isOutgoing
+                  ? `Sent ${tx.amount?.toLocaleString()} ${tx.tokenMint || 'SOL'} to ${tx.recipient?.slice(0, 8)}...${tx.recipient?.slice(-8)}`
+                  : isIncoming
+                    ? `Received ${tx.amount?.toLocaleString()} ${tx.tokenMint || 'SOL'} from ${tx.sender?.slice(0, 8)}...${tx.sender?.slice(-8)}`
+                    : 'Transaction';
+                const date = tx.blockTime ? new Date(tx.blockTime * 1000).toLocaleString() : 'Unknown';
+                return (
+                  <div key={tx.signature} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center 
+                          ${isIncoming
                             ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                            : tx.type === "outgoing"
+                            : isOutgoing
                               ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
                               : "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                        }`}
-                    >
-                      {tx.type === "incoming" ? (
-                        <ArrowDownRight className="h-5 w-5" />
-                      ) : tx.type === "outgoing" ? (
-                        <ArrowUpRight className="h-5 w-5" />
-                      ) : (
-                        <ArrowDownUp className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium">{tx.description}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        {tx.date}
-                        <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground mx-1"></span>
-                        <Badge variant="outline" className="text-[10px] py-0 h-4">
-                          {tx.status}
-                        </Badge>
+                          }`}
+                      >
+                        {isIncoming ? (
+                          <ArrowDownRight className="h-5 w-5" />
+                        ) : isOutgoing ? (
+                          <ArrowUpRight className="h-5 w-5" />
+                        ) : (
+                          <ArrowDownUp className="h-5 w-5" />
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`font-medium text-right ${
-                        tx.type === "incoming"
-                          ? "text-green-600 dark:text-green-400"
-                          : tx.type === "outgoing"
-                            ? "text-red-600 dark:text-red-400"
-                            : ""
-                      }`}
-                    >
-                      {tx.amount}
+                      <div>
+                        <div className="font-medium">{description}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          {date}
+                          <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground mx-1"></span>
+                          <Badge variant="outline" className="text-[10px] py-0 h-4">
+                            {status}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono break-all">{tx.signature}</div>
+                      </div>
                     </div>
                     <TooltipProvider>
                       <Tooltip>
@@ -450,8 +474,8 @@ export default function WalletPage() {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -512,7 +536,7 @@ export default function WalletPage() {
             </Button>
             <Button className="sm:flex-1" asChild>
               <a
-                href={`https://explorer.solana.com/address/${walletAddress}`}
+                href={getSolanaExplorerUrl('address', walletAddress)}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -683,155 +707,184 @@ export default function WalletPage() {
       </Dialog>
 
       {/* Swap Dialog */}
-      <Dialog open={isSwapOpen} onOpenChange={setIsSwapOpen}>
+      <Dialog open={isSwapOpen} onOpenChange={(open) => {
+        setIsSwapOpen(open)
+        if (!open) {
+          setSwapStep('idle')
+          setSwapResultDetails(null)
+        }
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5 text-primary" />
+              <RefreshCw className="h-5 w-5 text-primary animate-spin-swap" />
               Swap Currencies
             </DialogTitle>
             <DialogDescription>Exchange one cryptocurrency for another</DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label>From</Label>
-              <div className="flex items-center gap-2">
-                <Select value={swapFromCurrency} onValueChange={setSwapFromCurrency}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {walletBalances.map((currency) => (
-                      <SelectItem key={currency.currency} value={currency.currency}>
-                        <div className="flex items-center gap-2">
-                          {currency.icon && (
-                            <div className="w-4 h-4 rounded-full overflow-hidden">
-                              <img
-                                src={currency.icon || "/placeholder.svg"}
-                                alt={currency.currency}
-                                className="w-full h-full object-cover"
-                              />
+          <div ref={swapModalContentRef} className="space-y-6 py-4 min-h-[220px] flex flex-col justify-center">
+            {swapStep !== 'idle' && isSwapLoading && (swapStep === 'preparing' || swapStep === 'signing' || swapStep === 'submitting') ? (
+              <AnimatedSwapLoader step={swapStep as 'preparing' | 'signing' | 'submitting'} />
+            ) : swapStep === 'success' && swapResultDetails ? (
+              <SwapSuccessDetails details={swapResultDetails} onViewExplorer={() => openExplorer(swapResultDetails.signature)} />
+            ) : swapStep === 'error' && swapResultDetails ? (
+              <SwapErrorDetails error={swapResultDetails.error} />
+            ) : (
+              // ...existing swap form code here...
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label>From</Label>
+                  <div className="flex items-center gap-2">
+                    <Select value={swapFromCurrency} onValueChange={setSwapFromCurrency}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {walletBalances.map((currency) => (
+                          <SelectItem key={currency.currency} value={currency.currency}>
+                            <div className="flex items-center gap-2">
+                              {currency.icon && (
+                                <div className="w-4 h-4 rounded-full overflow-hidden">
+                                  <img
+                                    src={currency.icon || "/placeholder.svg"}
+                                    alt={currency.currency}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              {currency.currency}
                             </div>
-                          )}
-                          {currency.currency}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={swapAmount}
-                  onChange={(e) => setSwapAmount(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-              <div className="text-xs text-right text-muted-foreground">
-                Available: {walletBalances.find((b) => b.currency === swapFromCurrency)?.balance.toLocaleString()}{" "}
-                {swapFromCurrency}
-              </div>
-            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={swapAmount}
+                      onChange={(e) => setSwapAmount(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                  <div className="text-xs text-right text-muted-foreground">
+                    Available: {walletBalances.find((b) => b.currency === swapFromCurrency)?.balance.toLocaleString()}{" "}
+                    {swapFromCurrency}
+                  </div>
+                </div>
 
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full h-10 w-10 border-dashed"
-                onClick={() => {
-                  const temp = swapFromCurrency
-                  setSwapFromCurrency(swapToCurrency)
-                  setSwapToCurrency(temp)
-                }}
-              >
-                <ArrowDownUp className="h-4 w-4" />
-              </Button>
-            </div>
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full h-10 w-10 border-dashed"
+                    onClick={() => {
+                      const temp = swapFromCurrency
+                      setSwapFromCurrency(swapToCurrency)
+                      setSwapToCurrency(temp)
+                    }}
+                  >
+                    <ArrowDownUp className="h-4 w-4" />
+                  </Button>
+                </div>
 
-            <div className="space-y-2">
-              <Label>To</Label>
-              <div className="flex items-center gap-2">
-                <Select value={swapToCurrency} onValueChange={setSwapToCurrency}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {walletBalances.map((currency) => (
-                      <SelectItem key={currency.currency} value={currency.currency}>
-                        <div className="flex items-center gap-2">
-                          {currency.icon && (
-                            <div className="w-4 h-4 rounded-full overflow-hidden">
-                              <img
-                                src={currency.icon || "/placeholder.svg"}
-                                alt={currency.currency}
-                                className="w-full h-full object-cover"
-                              />
+                <div className="space-y-2">
+                  <Label>To</Label>
+                  <div className="flex items-center gap-2">
+                    <Select value={swapToCurrency} onValueChange={setSwapToCurrency}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {walletBalances.map((currency) => (
+                          <SelectItem key={currency.currency} value={currency.currency}>
+                            <div className="flex items-center gap-2">
+                              {currency.icon && (
+                                <div className="w-4 h-4 rounded-full overflow-hidden">
+                                  <img
+                                    src={currency.icon || "/placeholder.svg"}
+                                    alt={currency.currency}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              {currency.currency}
                             </div>
-                          )}
-                          {currency.currency}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input type="number" placeholder="0.00" value={swapEstimate} readOnly className="flex-1 bg-muted/50" />
-              </div>
-            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input type="number" placeholder="0.00" value={swapEstimate} readOnly className="flex-1 bg-muted/50" />
+                  </div>
+                </div>
 
-            <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="flex items-center gap-1">
-                  Exchange Rate
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Current market rate with 0.1% spread</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </span>
-                <span>
-                  {swapFromCurrency === "USDC" && swapToCurrency === "SOL"
-                    ? "1 USDC ≈ 0.01 SOL"
-                    : swapFromCurrency === "SOL" && swapToCurrency === "USDC"
-                      ? "1 SOL ≈ 100 USDC"
-                      : "1 " + swapFromCurrency + " ≈ 1 " + swapToCurrency}
-                </span>
+                <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-1">
+                      Exchange Rate
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Current market rate with 0.1% spread</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </span>
+                    <span>
+                      {swapFromCurrency === "USDC" && swapToCurrency === "SOL"
+                        ? "1 USDC ≈ 0.01 SOL"
+                        : swapFromCurrency === "SOL" && swapToCurrency === "USDC"
+                          ? "1 SOL ≈ 100 USDC"
+                          : "1 " + swapFromCurrency + " ≈ 1 " + swapToCurrency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Fee</span>
+                    <span>0.1%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Slippage Tolerance</span>
+                    <span>0.5%</span>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Estimated Receive</span>
+                    <span>
+                      {swapEstimate || "0.00"} {swapToCurrency}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Fee</span>
-                <span>0.1%</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Slippage Tolerance</span>
-                <span>0.5%</span>
-              </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between text-sm font-medium">
-                <span>Estimated Receive</span>
-                <span>
-                  {swapEstimate || "0.00"} {swapToCurrency}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="sm:flex-1" onClick={() => setIsSwapOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="sm:flex-1" onClick={executeSwap} disabled={!swapAmount || isSwapLoading}>
-              {isSwapLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Processing...
-                </span>
-              ) : (
-                "Swap"
-              )}
-            </Button>
+            {swapStep === 'idle' && (
+              <>
+                <Button variant="outline" className="sm:flex-1" onClick={() => setIsSwapOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="sm:flex-1" onClick={executeSwap} disabled={!swapAmount || isSwapLoading}>
+                  {isSwapLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    "Swap"
+                  )}
+                </Button>
+              </>
+            )}
+            {(swapStep === 'success' || swapStep === 'error') && (
+              <Button className="sm:flex-1" onClick={() => {
+                setSwapStep('idle')
+                setSwapResultDetails(null)
+              }}>
+                Close
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -912,5 +965,52 @@ function CurrencyCard({ currency, onDeposit, onWithdraw }: CurrencyCardProps) {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// Animated loader component for swap steps
+function AnimatedSwapLoader({ step }: { step: 'preparing' | 'signing' | 'submitting' }) {
+  const stepMap = {
+    preparing: { label: 'Preparing swap transaction...', icon: <Loader2 className="h-8 w-8 animate-spin text-primary" /> },
+    signing: { label: 'Requesting wallet signature...', icon: <Loader2 className="h-8 w-8 animate-spin text-primary" /> },
+    submitting: { label: 'Submitting transaction to network...', icon: <Loader2 className="h-8 w-8 animate-spin text-primary" /> },
+  } as const;
+  const current = stepMap[step];
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 animate-fade-in">
+      {current.icon}
+      <div className="text-lg font-semibold text-primary animate-pulse">{current.label}</div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div className={`h-2 bg-primary transition-all duration-700 ${step === 'preparing' ? 'w-1/3' : step === 'signing' ? 'w-2/3' : 'w-full'}`}></div>
+      </div>
+    </div>
+  )
+}
+
+// Swap success details component
+function SwapSuccessDetails({ details, onViewExplorer }: { details: any, onViewExplorer: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 animate-fade-in">
+      <CheckCircle2 className="h-10 w-10 text-green-500 animate-bounce" />
+      <div className="text-lg font-semibold text-green-600">Swap Successful!</div>
+      <div className="text-sm text-muted-foreground text-center">
+        Swapped <span className="font-bold">{details.amountIn} {details.from}</span> for <span className="font-bold">{details.amountOut} {details.to}</span>.<br />
+        <span className="text-xs">Signature:</span> <span className="font-mono text-xs break-all">{details.signature}</span>
+      </div>
+      <Button variant="outline" onClick={onViewExplorer}>
+        View on Explorer <ExternalLink className="ml-2 h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
+
+// Swap error details component
+function SwapErrorDetails({ error }: { error: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 animate-fade-in">
+      <AlertCircle className="h-10 w-10 text-red-500 animate-shake" />
+      <div className="text-lg font-semibold text-red-600">Swap Failed</div>
+      <div className="text-sm text-muted-foreground text-center">{error}</div>
+    </div>
   )
 }

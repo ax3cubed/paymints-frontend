@@ -1,24 +1,13 @@
 import apiClient from "@/lib/api/client"
-import type { AuthResponse, UserDetailsResponse } from "@/lib/api/types"
+import { UserDetailsResponse } from "@/types"
+import { AuthResponse } from "@/types/auth"
 
 export const authApi = {
-  connectUser: async (address: string) => {
-    const response = await apiClient.post<AuthResponse>("/api/auth/connectuser", { address })
-    return response.data
-  },
+  connectUser: async (address: string) =>  await apiClient.post<AuthResponse>("/api/auth/connectuser", { address }),
 
-  register: async (address: string) => {
-    const response = await apiClient.post<AuthResponse>("/api/auth/register", { address })
-    return response.data
-  },
+  register: async (address: string) =>   await apiClient.post<AuthResponse>("/api/auth/register", { address }),
 
-  login: async (addressOrUsername: string) => {
-    const response = await apiClient.post<AuthResponse>("/api/auth/login", { addressOrUsername })
-    return response.data
-  },
+  login: async (addressOrUsername: string) =>  await apiClient.post<AuthResponse>("/api/auth/login", { addressOrUsername }),
 
-  getUserDetails: async () => {
-    const response = await apiClient.get<UserDetailsResponse>("/api/auth/me")
-    return response.data
-  },
+  getUserDetails: async () => await apiClient.get<UserDetailsResponse>("/api/auth/me"),
 }

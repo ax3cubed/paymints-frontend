@@ -1,11 +1,7 @@
-import apiClient from "@/lib/api/client"
-import type { TransactionsResponse } from "@/lib/api/types"
+import apiClient from "@/lib/api/client";
+import { TransactionsResponse } from "@/types";
 
 export const transactionApi = {
-  getTransactions: async (address: string) => {
-    const response = await apiClient.get<TransactionsResponse>("/api/txn/transactions", {
-      params: { address },
-    })
-    return response.data
-  },
-}
+	getTransactions: async (address: string) =>
+		await apiClient.post<TransactionsResponse>("/api/txn/transactions", {address}),
+};

@@ -1,6 +1,5 @@
+import { PaymentsResponse, SinglePaymentResponse } from "@/types"
 import apiClient from "./client"
-import type { PaymentResponse, PaymentsResponse, SinglePaymentResponse } from "@/lib/api/types"
-
 export const paymentApi = {
   createPayment: async (paymentData: {
     paymentHash: string

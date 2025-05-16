@@ -9,40 +9,87 @@ import { Button } from "@/components/ui/button"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { Transaction } from "@solana/web3.js"
+import { useSolana } from "@/components/solana/solana-provider"
+import { Base64EncodedWireTransaction } from "@solana/kit"
 
 export default function InvoiceViewPage() {
   const params = useParams()
   const router = useRouter()
+  const { signTransaction } = useWallet()
   const { toast } = useToast()
   const id = params?.id as string
-  const { invoice, isLoading, refetch } = useInvoice(id)
-  const [isActivating, setIsActivating] = useState(false)
-  const [isActive, setIsActive] = useState(false)
-
+  const { activateInvoice, isActivating, isActive, invoice, isLoading, refetch } = useInvoice(id);
+  const { rpc } = useSolana()
   useEffect(() => {
     if (id) {
       refetch()
     }
-  }, [id, refetch])
+  }, [id, refetch, activateInvoice])
 
   const handleActivate = async () => {
-    setIsActivating(true)
+    if (!id) return
+
     try {
-      // Simulate API call to activate invoice
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      setIsActive(true)
-      toast({
-        title: "Invoice Activated",
-        description: "Your invoice is now active and ready to be shared.",
-      })
+      const activitatedInvoice = await activateInvoice();
+
+      const invoiceHash = activitatedInvoice?.invoiceTxHash;
+
+      if (invoiceHash && signTransaction) {
+        const invoiceBuffer: Transaction = Transaction.from(Buffer.from(invoiceHash, "base64"))
+        await signTransaction(invoiceBuffer).then(async (signedTransaction) => {
+          const signedTxHash = signedTransaction.serialize();
+          const base64WireTransaction: Base64EncodedWireTransaction = btoa(String.fromCharCode(...new Uint8Array(signedTxHash))) as Base64EncodedWireTransaction;
+          console.log("Base64 Wire Transaction:", base64WireTransaction);
+
+          const signature = await rpc?.sendTransaction(
+            base64WireTransaction,
+            { preflightCommitment: "confirmed" }
+          ).send({ abortSignal: new AbortController().signal });
+          console.log("Transaction Signature:", signature);
+
+          if (signature) {
+            toast({
+              title: "Invoice Activated",
+              description: (
+                <span>
+                  Your invoice has been successfully activated.<br />
+                  <a
+                    href={`https://explorer.solana.com/tx/${signature}?cluster=devnet`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#6366f1", textDecoration: "underline" }}
+                  >
+                    View on Solana Explorer
+                  </a>
+                </span>
+              ),
+              variant: "default",
+            });
+            // Optionally: update invoice with signature here
+          } else {
+            toast({
+              title: "Activation Failed",
+              description: "No transaction signature returned.",
+              variant: "destructive",
+            });
+          }
+        }).catch((error) => {
+          toast({
+            title: "Activation Failed",
+            description: `Failed to activate invoice: ${error.message}`,
+            variant: "destructive",
+          });
+        });
+      }
+
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to activate invoice. Please try again.",
+        title: "Activation Error",
+        description: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
-      })
-    } finally {
-      setIsActivating(false)
+      });
     }
   }
 
@@ -68,7 +115,7 @@ export default function InvoiceViewPage() {
       </div>
     )
   }
-
+  const isInvoiceActive = isActivating || invoice.invoiceStatus === "1"
   return (
     <div className="container py-10">
       <motion.div
@@ -80,12 +127,12 @@ export default function InvoiceViewPage() {
         <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           <Breadcrumb segments={[{ name: "Invoices", href: "/invoices" }, { name: `Invoice ${id}` }]} />
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             <h1 className="text-3xl font-bold tracking-tight">Invoice {id}</h1>
             {!isActive && (
-              <Button onClick={handleActivate} disabled={isActivating} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleActivate} disabled={false} className="bg-green-600 hover:bg-green-700">
                 {isActivating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

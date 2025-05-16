@@ -8,8 +8,12 @@ export const selectedInvoiceAtom = atom<Invoice | null>(null)
 
 /**
  * Atom for storing the invoice activation state
+ * Now derived from selectedInvoiceAtom: active if invoiceStatus === 1
  */
-export const isInvoiceActiveAtom = atom<boolean>(false)
+export const isInvoiceActiveAtom = atom((get) => {
+  const invoice = get(selectedInvoiceAtom)
+  return invoice ? invoice.invoiceStatus == "1" : false
+})
 
 /**
  * Atom for storing the invoice filter criteria

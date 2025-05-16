@@ -13,13 +13,15 @@ export const formatAddress = (address: string | null) => {
 
 export const formatNumber = (value: number | string) => {
 	if (typeof value === "number") {
-		return value.toLocaleString("en-US", {
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 2,
+		// Format to 2 significant figures
+		return Number(value).toLocaleString("en-US", {
+			maximumSignificantDigits: 2,
+			useGrouping: true,
 		});
 	}
 	return value;
 };
+
 export const formatCurrency = (value: number | string, currency: string) => {
 	const number = formatNumber(value);
 	return `${currency} ${number}`;

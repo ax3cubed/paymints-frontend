@@ -26,7 +26,7 @@ export function useTransactions() {
   }, [])
 
   return {
-    transactions: transactionsData?.data.txn || [],
+    transactions: transactionsData?.data.data.txn || [],
     isLoading,
     error,
     refetch,

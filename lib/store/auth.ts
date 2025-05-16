@@ -1,6 +1,7 @@
+import { User, UserDetails } from "@/types"
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
-import type { User, UserDetails } from "@/lib/api/types"
+
 
 // Persistent atoms (stored in localStorage)
 export const tokenAtom = atomWithStorage<string | null>("token", null)

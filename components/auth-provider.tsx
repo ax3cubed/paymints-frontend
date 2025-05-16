@@ -9,12 +9,12 @@ import {
   userDetailsAtom
 } from '@/lib/store/auth';
 import { authApi } from '@/lib/api/auth';
-import type { User, UserDetails } from '@/lib/api/types';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { walletAddressAtom } from '@/lib/store/wallet';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api/client';
+import { User, UserDetails } from '@/types';
 
 interface AuthContextType {
   token: string | null;
@@ -29,7 +29,7 @@ interface AuthContextType {
   connectWallet: () => Promise<{ success: boolean; error?: string }>;
   login: () => Promise<{ success: boolean; error?: string }>;
   register: () => Promise<{ success: boolean; error?: string }>;
-  fetchUserDetails: () => Promise<{ success: boolean; error?: any; data?: UserDetails }>;
+  fetchUserDetails: () => Promise<{ success: boolean; error?: any; data?: any }>;
   logout: () => Promise<{ success: boolean; error?: any }>;
   isAuthenticating: boolean;
   clearError: () => void;
@@ -114,8 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           break;
       }
       
-      setToken(response.data.token);
-      setUser(response.data.user);
+      setToken(response.data.data.token);
+      setUser(response.data.data.user);
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error 
@@ -150,8 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authApi.getUserDetails();
-      setUserDetails(response.data);
-      return { success: true, data: response.data };
+      setUserDetails(response.data.data);
+      return { success: true, data: response.data.data };
     } catch (err) {
       console.error('Failed to fetch user details:', err);
       return { success: false, error: err };

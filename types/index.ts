@@ -63,94 +63,75 @@ export interface TransactionInfo {
     }
   }
   
-
+// Generic API Response
+export interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+  meta: {
+    timestamp: string
+  }
+}
 
 // Transaction Types
 export interface Transaction {
-    signature: string
-    slot: number
-    blockTime: number | null
-    sender: string | null
-    recipient: string | null
-    amount: number | null
-    tokenMint: string | null
-    error: string | null
+  signature: string
+  slot: number
+  blockTime: number | null
+  sender: string | null
+  recipient: string | null
+  amount: number | null
+  tokenMint: string | null
+  error: string | null
+}
+
+export type TransactionsResponse = ApiResponse<{ txn: Transaction[] }>
+
+// Payment Types
+export type PaymentStatus = "pending" | "completed" | "failed" | "cancelled"
+export type ServiceType = "invoice" | "payroll" | "DAO" | "credit"
+
+export interface Payment {
+  id: number
+  paymentHash: string
+  paymentDescription: string
+  receiver: string
+  sender: string
+  paymentStatus: PaymentStatus
+  totalAmount: string
+  serviceType: ServiceType
+  paymentDate: string
+  paymentSignature: string
+  mintAddress: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type PaymentResponse = ApiResponse<{ data: { id: string; paymentHash: string } }>
+export type PaymentsResponse = ApiResponse<{ txn: Payment[] }>
+export type SinglePaymentResponse = ApiResponse<{ txn: Payment }>
+
+// API Error Types
+export interface ApiError {
+  success: boolean
+  message: string
+  errors?: string[]
+  meta: {
+    timestamp: string
   }
-  
-  export interface TransactionsResponse {
+}
+
+  export interface UserDetailsResponse {
     success: boolean
     message: string
-    data: {
-      txn: Transaction[]
-    }
+    data: UserDetails
     meta: {
       timestamp: string
     }
   }
-  
-  // Payment Types
-  export type PaymentStatus = "pending" | "completed" | "failed" | "cancelled"
-  export type ServiceType = "invoice" | "payroll" | "DAO" | "credit"
-  
-  export interface Payment {
-    id: number
-    paymentHash: string
-    paymentDescription: string
-    receiver: string
-    sender: string
-    paymentStatus: PaymentStatus
-    totalAmount: string
-    serviceType: ServiceType
-    paymentDate: string
-    paymentSignature: string
-    mintAddress: string
-    createdAt: string
-    updatedAt: string
+
+  export interface UserDetails {
+    beneficiaries: Beneficiary[]
+    tokens: TokenBalance[]
+    user: User
   }
-  
-  export interface PaymentResponse {
-    success: boolean
-    message: string
-    data: {
-      data: {
-        id: string
-        paymentHash: string
-      }
-    }
-    meta: {
-      timestamp: string
-    }
-  }
-  
-  export interface PaymentsResponse {
-    success: boolean
-    message: string
-    data: {
-      txn: Payment[]
-    }
-    meta: {
-      timestamp: string
-    }
-  }
-  
-  export interface SinglePaymentResponse {
-    success: boolean
-    message: string
-    data: {
-      txn: Payment
-    }
-    meta: {
-      timestamp: string
-    }
-  }
-  
-  // API Error Types
-  export interface ApiError {
-    success: boolean
-    message: string
-    errors?: string[]
-    meta: {
-      timestamp: string
-    }
-  }
-  

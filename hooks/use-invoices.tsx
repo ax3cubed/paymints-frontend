@@ -170,26 +170,27 @@ export function useInvoice(id: string | undefined) {
     },
     enabled: !!id,
   })
-  
+
   // Use useEffect to handle the onSuccess logic
   useCallback(() => {
     if (data) {
       setSelectedInvoice(data)
-      setIsActive(data.invoiceStatus === "1")
+
     }
   }, [data, setSelectedInvoice, setIsActive])
 
   // Mutation for activating an invoice
   const activateInvoiceMutation = useMutation({
     mutationFn: (id: string) => invoiceApi.activateInvoice(id),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      setIsActive(true)
+
       toast({
         title: "Success",
         description: "Invoice activated successfully",
       })
+      return result.data.invoice
     },
     onError: (error: Error) => {
       toast({
@@ -203,7 +204,7 @@ export function useInvoice(id: string | undefined) {
   // Function to activate an invoice
   const activateInvoice = useCallback(async () => {
     if (!id) return
-    await activateInvoiceMutation.mutateAsync(id)
+    return (await activateInvoiceMutation.mutateAsync(id)).data.invoice
   }, [id, activateInvoiceMutation])
 
   return {

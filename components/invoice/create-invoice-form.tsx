@@ -45,6 +45,7 @@ import { useRouter } from "next/navigation"
 import type { InvoiceType } from "@/types/invoice"
 import { useAuth } from "../auth-provider"
 import { formatCurrency } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 // Define the schema for each step
 const invoiceDetailsSchema = z.object({
@@ -63,10 +64,10 @@ const clientDetailsSchema = z.object({
 })
 
 const serviceSchema = z.object({
-  name: z.string().min(1, "Service name is required"),
+  title: z.string().min(1, "Service name is required"),
   description: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
-  price: z.number().min(0, "Price must be at least 0"),
+  unitPrice: z.number().min(0, "Price must be at least 0"),
 })
 
 const servicesSchema = z.object({
@@ -129,18 +130,7 @@ interface Token {
   iconText: string
 }
 
-// Create a list of payment tokens
-const tokenBgColors = [
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-yellow-500",
-  "bg-orange-500",
-  "bg-red-500",
-  "bg-teal-500",
-  "bg-indigo-500",
-]
+
 
 export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const [activeStep, setActiveStep] = useState(0)
@@ -165,7 +155,7 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
       invoiceVisibility: "private",
       autoEmailReceipt: false,
       QRcodeEnabled: true,
-      services: [{ name: "", description: "", quantity: 1, price: 0 }],
+      services: [{ title: "", description: "", quantity: 1, unitPrice: 0 }],
       discountCodes: [],
       subtotal: 0,
       discount: 0,
@@ -184,7 +174,7 @@ export function CreateInvoiceForm({ onClose }: { onClose: () => void }) {
   const taxRate = watch("taxRate")
 
   React.useEffect(() => {
-    const subtotal = services.reduce((sum, service) => sum + service.quantity * service.price, 0)
+    const subtotal = services.reduce((sum, service) => sum + service.quantity * service.unitPrice, 0)
     const taxAmount = subtotal * (taxRate / 100)
     const totalAmount = subtotal + taxAmount
 
@@ -342,9 +332,7 @@ function InvoiceDetailsStep() {
   const { tokens } = useAuth()
   const paymentTokens =
     tokens?.map((token) => {
-      // Pick a random color for each token
-      const bgColor = tokenBgColors[Math.floor(Math.random() * tokenBgColors.length)]
-      // Use the first letter of the symbol as icon text, fallback to "?"
+
       const iconText = token.symbol?.[0]?.toUpperCase() || "?"
       return {
         currency: token.symbol,
@@ -356,7 +344,6 @@ function InvoiceDetailsStep() {
         changePositive: Math.random() > 0.5,
         address: token.mintAddress,
         symbol: token.symbol,
-        bgColor,
         iconText,
       }
     }) || []
@@ -443,15 +430,16 @@ function InvoiceDetailsStep() {
                           (token) => token.address === watch("invoiceMintAddress"),
                         )
                         return (
-                          <>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white text-xs font-bold ${selectedToken?.bgColor}`}>
-                              {selectedToken?.iconText}
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="cursor-pointer flex justify-center items-center align-middle">
+                              <AvatarImage width={16} height={16} src={selectedToken?.icon} alt="Token Image" />
+                              <AvatarFallback>{selectedToken?.currency.slice(0, 2)}</AvatarFallback>
+                            </Avatar>
                             <div>
                               <p className="font-medium">{selectedToken?.symbol}</p>
                               <p className="text-xs text-muted-foreground mt-0.5">Selected Payment Token</p>
                             </div>
-                          </>
+                          </div>
                         )
                       })()}
                     </div>
@@ -632,7 +620,7 @@ function ServicesStep() {
   })
 
   const services = watch("services")
-  const subtotal = services.reduce((sum, service) => sum + service.quantity * service.price, 0)
+  const subtotal = services.reduce((sum, service) => sum + service.quantity * service.unitPrice, 0)
 
   // Get selected mint address and tokens
   const invoiceMintAddress = watch("invoiceMintAddress")
@@ -675,7 +663,7 @@ function ServicesStep() {
                   <tbody className="divide-y">
                     {fields.map((field, index) => {
                       const service = services[index]
-                      const total = service?.quantity * service?.price || 0
+                      const total = service?.quantity * service?.unitPrice || 0
 
                       return (
                         <motion.tr
@@ -686,7 +674,7 @@ function ServicesStep() {
                           className="bg-card"
                         >
                           <td className="p-3">
-                            <div className="font-medium">{service?.name || "Unnamed Service"}</div>
+                            <div className="font-medium">{service?.title || "Unnamed Service"}</div>
                             {service?.description && (
                               <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                 {service.description}
@@ -694,7 +682,7 @@ function ServicesStep() {
                             )}
                           </td>
                           <td className="p-3 text-right">{service?.quantity || 0}</td>
-                          <td className="p-3 text-right">{formatCurrency(service?.price, currencySymbol) || "0.00"}</td>
+                          <td className="p-3 text-right">{formatCurrency(service?.unitPrice, currencySymbol) || "0.00"}</td>
                           <td className="p-3 text-right font-medium">{formatCurrency(total, currencySymbol)}</td>
                           <td className="p-3">
                             {fields.length > 1 && (
@@ -735,7 +723,7 @@ function ServicesStep() {
             type="button"
             variant="outline"
             className="w-full flex items-center justify-center gap-2"
-            onClick={() => append({ name: "", description: "", quantity: 1, price: 0 })}
+            onClick={() => append({ title: "", description: "", quantity: 1, unitPrice: 0 })}
           >
             <Plus className="h-4 w-4" />
             Add Service
@@ -774,17 +762,17 @@ function ServicesStep() {
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`services.${index}.name`} className="text-sm font-medium">
+                    <Label htmlFor={`services.${index}.title`} className="text-sm font-medium">
                       Service Name
                     </Label>
                     <Input
                       id={`services.${index}.name`}
                       placeholder="e.g. Web Design"
-                      {...register(`services.${index}.name` as const)}
+                      {...register(`services.${index}.title` as const)}
                       className="h-11"
                     />
-                    {errors.services?.[index]?.name && (
-                      <p className="text-sm text-destructive mt-1">{errors.services[index]?.name?.message}</p>
+                    {errors.services?.[index]?.title && (
+                      <p className="text-sm text-destructive mt-1">{errors.services[index]?.title?.message}</p>
                     )}
                   </div>
 
@@ -823,24 +811,24 @@ function ServicesStep() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor={`services.${index}.price`} className="text-sm font-medium">
+                      <Label htmlFor={`services.${index}.unitPrice`} className="text-sm font-medium">
                         Price
                       </Label>
                       <div className="relative">
                         <Input
-                          id={`services.${index}.price`}
+                          id={`services.${index}.unitPrice`}
                           type="number"
                           min="0"
                           step="0.01"
                           className="h-11 pl-8"
-                          {...register(`services.${index}.price` as const, {
+                          {...register(`services.${index}.unitPrice` as const, {
                             valueAsNumber: true,
                           })}
                         />
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                       </div>
-                      {errors.services?.[index]?.price && (
-                        <p className="text-sm text-destructive mt-1">{errors.services[index]?.price?.message}</p>
+                      {errors.services?.[index]?.unitPrice && (
+                        <p className="text-sm text-destructive mt-1">{errors.services[index]?.unitPrice?.message}</p>
                       )}
                     </div>
                   </div>
@@ -849,7 +837,7 @@ function ServicesStep() {
                   <div className="flex justify-between items-center w-full">
                     <span className="text-sm text-muted-foreground">Service Total:</span>
                     <span className="font-medium">
-                      {formatCurrency(services[index]?.quantity * services[index]?.price, currencySymbol)}
+                      {formatCurrency(services[index]?.quantity * services[index]?.unitPrice, currencySymbol)}
 
                     </span>
                   </div>
@@ -1125,12 +1113,11 @@ function ReviewStep() {
   const { tokens } = useAuth()
   const paymentTokens =
     tokens?.map((token) => {
-      // Pick a random color for each token
-      const bgColor = tokenBgColors[Math.floor(Math.random() * tokenBgColors.length)]
-      // Use the first letter of the symbol as icon text, fallback to "?"
+
+
       const iconText = token.symbol?.[0]?.toUpperCase() || "?"
       return {
-      currency: token.symbol,
+        currency: token.symbol,
         balance: token.balance,
         value: token.balance * 1, // Assuming 1:1 for simplicity
         icon: token.imageUrl,
@@ -1139,7 +1126,6 @@ function ReviewStep() {
         changePositive: Math.random() > 0.5,
         address: token.mintAddress,
         symbol: token.symbol,
-        bgColor,
         iconText,
       }
     }) || []
@@ -1172,11 +1158,10 @@ function ReviewStep() {
                     const selectedToken = paymentTokens.find((token) => token.address === formValues.invoiceMintAddress)
                     return (
                       <>
-                        <div
-                          className={`w-4 h-4 rounded-full ${selectedToken?.bgColor} flex items-center justify-center mr-2 text-white text-xs font-bold`}
-                        >
-                          {selectedToken?.iconText}
-                        </div>
+                         <Avatar className="cursor-pointer flex justify-center items-center align-middle">
+                              <AvatarImage width={16} height={16} src={selectedToken?.icon} alt="Token Image" />
+                              <AvatarFallback>{selectedToken?.iconText.slice(0,2)}</AvatarFallback>
+                            </Avatar>
                         {selectedToken?.symbol}
                       </>
                     )
@@ -1261,14 +1246,14 @@ function ReviewStep() {
                 {formValues.services.map((service, index) => (
                   <tr key={index}>
                     <td className="p-4">
-                      <div className="font-medium">{service.name}</div>
+                      <div className="font-medium">{service.title}</div>
                       {service.description && (
                         <div className="text-xs text-muted-foreground mt-1">{service.description}</div>
                       )}
                     </td>
                     <td className="p-4 text-right">{service.quantity}</td>
-                    <td className="p-4 text-right">${service.price.toFixed(2)}</td>
-                    <td className="p-4 text-right font-medium">${(service.quantity * service.price).toFixed(2)}</td>
+                    <td className="p-4 text-right">${service.unitPrice.toFixed(2)}</td>
+                    <td className="p-4 text-right font-medium">${(service.quantity * service.unitPrice).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>

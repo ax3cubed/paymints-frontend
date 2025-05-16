@@ -108,15 +108,15 @@ export const invoiceApi = {
 	activateInvoice: async (
 		id: string
 	): Promise<ApiResponse<UpdateInvoiceResponse>> => {
-		const data = { invoiceStatus: "1" }; // Active status
+		const data = { invoiceNo: id }; // Active status
 		if (config.api.useMockData) {
 			return mockRequest<UpdateInvoiceResponse>(`/api/invoice/${id}`, {
 				method: "PUT",
 				body: JSON.stringify(data),
 			});
 		}
-		const response = await apiClient.put<ApiResponse<UpdateInvoiceResponse>>(
-			`/api/invoice/${id}`,
+		const response = await apiClient.post<ApiResponse<UpdateInvoiceResponse>>(
+			`/api/invoice/activate`,
 			data
 		);
 		return response.data;
