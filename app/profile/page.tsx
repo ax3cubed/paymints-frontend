@@ -19,7 +19,7 @@ export default function ProfilePage() {
   const [nextLevelXp, setNextLevelXp] = useState(1500)
   const [progress, setProgress] = useState((1250 / 1500) * 100)
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text:string) => {
     navigator.clipboard.writeText(text)
     // You would typically show a toast notification here
   }

@@ -1,12 +1,12 @@
-import { TokenBalance } from "@/types/invoice"
+
 import { fetchMint } from "@solana-program/token"
 import { address, Rpc, SolanaRpcApi } from "@solana/kit"
 import { PublicKey } from "@solana/web3.js"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-
 // Import token list
 import tokenList from "@/utils/token-list.json" // We'll create this file locally!
+import { TokenBalance } from "@/types"
 
 export function useFetchTokens(publicKey: PublicKey | null, connection: Rpc<SolanaRpcApi> | null) {
   const [tokens, setTokens] = useState<TokenBalance[]>([])

@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from "@/components/auth-provider"
 import { Wallet, Bell, Shield, Globe, Moon, Sun, Smartphone } from "lucide-react"
+import { useAtom } from "jotai"
+import { walletAddressAtom } from "@/lib/store/wallet"
 
 export default function SettingsPage() {
-  const { walletAddress } = useAuth()
+   const [walletAddress,_] = useAtom(walletAddressAtom)
   const [theme, setTheme] = useState("dark")
 
   // Format wallet address for display

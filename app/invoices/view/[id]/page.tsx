@@ -13,11 +13,15 @@ import { useWallet } from "@solana/wallet-adapter-react"
 import { Transaction } from "@solana/web3.js"
 import { useSolana } from "@/components/solana/solana-provider"
 import { Base64EncodedWireTransaction } from "@solana/kit"
+import { useCluster } from "@/components/cluster-provider"
+import bs58 from "bs58"
 
 export default function InvoiceViewPage() {
   const params = useParams()
   const router = useRouter()
   const { signTransaction } = useWallet()
+  const { getExplorerUrl } = useCluster()
+
   const { toast } = useToast()
   const id = params?.id as string
   const { activateInvoice, isActivating, isActive, invoice, isLoading, refetch } = useInvoice(id);
@@ -37,50 +41,86 @@ export default function InvoiceViewPage() {
       const invoiceHash = activitatedInvoice?.invoiceTxHash;
 
       if (invoiceHash && signTransaction) {
-        const invoiceBuffer: Transaction = Transaction.from(Buffer.from(invoiceHash, "base64"))
+        // Check what network you're connected to
+        // Try to identify the network from your RPC configuration
+        try {
+          // For some RPC implementations, you might need to inspect the endpoint differently
+          // This is a more general approach
+          console.log("RPC object:", rpc);
+
+          // If you have a connection object available, use that instead
+          // console.log("Connected to network:", connection.rpcEndpoint);
+        } catch (error) {
+          console.log("Could not determine network endpoint");
+        }
+
+        // Debug the transaction before signing
+        const invoiceBuffer: Transaction = Transaction.from(Buffer.from(invoiceHash, "base64"));
+        console.log("Transaction instructions:", invoiceBuffer.instructions);
+
+        // Log program IDs being referenced in transaction
+        invoiceBuffer.instructions.forEach((instruction, index) => {
+          console.log(`Instruction ${index} Program ID:`, instruction.programId.toBase58());
+        });
+
         await signTransaction(invoiceBuffer).then(async (signedTransaction) => {
+          // Use bs58 for proper Solana transaction encoding
           const signedTxHash = signedTransaction.serialize();
-          const base64WireTransaction: Base64EncodedWireTransaction = btoa(String.fromCharCode(...new Uint8Array(signedTxHash))) as Base64EncodedWireTransaction;
-          console.log("Base64 Wire Transaction:", base64WireTransaction);
+          const wireTransaction = bs58.encode(signedTxHash) as Base64EncodedWireTransaction;
+          console.log("Wire Transaction:", wireTransaction);
 
-          const signature = await rpc?.sendTransaction(
-            base64WireTransaction,
-            { preflightCommitment: "confirmed" }
-          ).send({ abortSignal: new AbortController().signal });
-          console.log("Transaction Signature:", signature);
+          try {
+            // Add preflight checks to get more info
+            const signature = await rpc?.sendTransaction(
+              wireTransaction,
+              {
+                preflightCommitment: "confirmed",
+                skipPreflight: false, // Enable preflight checks
+              }
+            ).send({ abortSignal: new AbortController().signal });
+            console.log("Transaction Signature:", signature);
 
-          if (signature) {
-            toast({
-              title: "Invoice Activated",
-              description: (
-                <span>
-                  Your invoice has been successfully activated.<br />
-                  <a
-                    href={`https://explorer.solana.com/tx/${signature}?cluster=devnet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#6366f1", textDecoration: "underline" }}
-                  >
-                    View on Solana Explorer
-                  </a>
-                </span>
-              ),
-              variant: "default",
-            });
-            // Optionally: update invoice with signature here
-          } else {
+            if (signature) {
+              toast({
+                title: "Invoice Activated",
+                description: (
+                  <span>
+                    Your invoice has been successfully activated.<br />
+                    <a
+                      href={getExplorerUrl(signature)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#6366f1", textDecoration: "underline" }}
+                    >
+                      View on Solana Explorer
+                    </a>
+                  </span>
+                ),
+                variant: "default",
+              });
+              // Optionally: update invoice with signature here
+            } else {
+              toast({
+                title: "Activation Failed",
+                description: "No transaction signature returned.",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
             toast({
               title: "Activation Failed",
-              description: "No transaction signature returned.",
+              description: `Failed to activate invoice: ${error instanceof Error ? error.message : String(error)}`,
               variant: "destructive",
             });
+            console.error("Transaction error:", error);
           }
         }).catch((error) => {
           toast({
             title: "Activation Failed",
-            description: `Failed to activate invoice: ${error.message}`,
+            description: `Failed to sign invoice: ${error.message}`,
             variant: "destructive",
           });
+          console.error("Signing error:", error);
         });
       }
 
