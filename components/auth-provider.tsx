@@ -29,7 +29,7 @@ interface AuthContextType {
   connectWallet: () => Promise<{ success: boolean; error?: string }>;
   login: () => Promise<{ success: boolean; error?: string }>;
   register: () => Promise<{ success: boolean; error?: string }>;
-  fetchUserDetails: () => Promise<{ success: boolean; error?: any; data?: any }>;
+  fetchUserDetails: () => Promise<{ success: boolean; error?: any; data?: UserDetails }>;
   logout: () => Promise<{ success: boolean; error?: any }>;
   isAuthenticating: boolean;
   clearError: () => void;
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { publicKey, connected, connecting, disconnecting, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
-  
+
   // Atoms
   const [token, setToken] = useAtom(tokenAtom);
   const [user, setUser] = useAtom(userAtom);
@@ -94,14 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const address = publicKey.toString();
     setWalletAddress(address);
-    
+
     setIsLoading(true);
     setError(null);
     setIsAuthenticating(true);
-    
+
     try {
       let response;
-      
+
       switch (authMethod) {
         case 'connect':
           response = await authApi.connectUser(address);
@@ -113,16 +113,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           response = await authApi.register(address);
           break;
       }
-      
+
       setToken(response.data.data.token);
       setUser(response.data.data.user);
       return { success: true };
     } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? err.message 
+      const errorMessage = err instanceof Error
+        ? err.message
         : `Failed to ${authMethod} with wallet`;
       setError(errorMessage);
-      console.error(`${authMethod} error:`, err);
+
       return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async () => {
     return authenticateWithWallet('login');
   }, [authenticateWithWallet]);
-  
+
   const register = useCallback(async () => {
     return authenticateWithWallet('register');
   }, [authenticateWithWallet]);
@@ -150,10 +150,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authApi.getUserDetails();
-      setUserDetails(response.data.data);
-      return { success: true, data: response.data.data };
+      const userDetailsData = response.data.data as UserDetails;
+      setUserDetails(userDetailsData);
+      return { success: true, data: userDetailsData };
     } catch (err) {
-      console.error('Failed to fetch user details:', err);
+
       return { success: false, error: err };
     } finally {
       setIsLoading(false);
@@ -179,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/');
       return { success: true };
     } catch (err) {
-      console.error('Logout error:', err);
+
       return { success: false, error: err };
     } finally {
       setIsLoading(false);
@@ -198,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (connected && publicKey && !isAuthenticated && !token) {
         await connectWallet();
       }
-      
+
       setInitialSetupComplete(true);
     };
 

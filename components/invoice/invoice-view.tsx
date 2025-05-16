@@ -445,7 +445,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
                       imageSettings={{
                         src: "/placeholder.svg?key=vnm7p",
                         height: 24,
-                        width: 24,
+                        width: 20,
                         excavate: true,
                       }}
                     />
