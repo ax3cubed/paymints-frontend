@@ -1,7 +1,7 @@
 # Paymints Frontend
 
 <p align="center">
-  <img src="public/images/placeholder.svg" alt="Paymints Logo" width="120" />
+  <img src="public/placeholder.svg" alt="Paymints Logo" width="120" />
 </p>
 
 <p align="center">
