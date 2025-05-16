@@ -46,28 +46,28 @@ export default function InvoiceViewPage() {
         try {
           // For some RPC implementations, you might need to inspect the endpoint differently
           // This is a more general approach
-          console.log("RPC object:", rpc);
+          
 
           // If you have a connection object available, use that instead
-          // console.log("Connected to network:", connection.rpcEndpoint);
+          // 
         } catch (error) {
-          console.log("Could not determine network endpoint");
+          
         }
 
         // Debug the transaction before signing
         const invoiceBuffer: Transaction = Transaction.from(Buffer.from(invoiceHash, "base64"));
-        console.log("Transaction instructions:", invoiceBuffer.instructions);
+        
 
         // Log program IDs being referenced in transaction
         invoiceBuffer.instructions.forEach((instruction, index) => {
-          console.log(`Instruction ${index} Program ID:`, instruction.programId.toBase58());
+          
         });
 
         await signTransaction(invoiceBuffer).then(async (signedTransaction) => {
           // Use bs58 for proper Solana transaction encoding
           const signedTxHash = signedTransaction.serialize();
           const wireTransaction = bs58.encode(signedTxHash) as Base64EncodedWireTransaction;
-          console.log("Wire Transaction:", wireTransaction);
+          
 
           try {
             // Add preflight checks to get more info
@@ -78,7 +78,7 @@ export default function InvoiceViewPage() {
                 skipPreflight: false, // Enable preflight checks
               }
             ).send({ abortSignal: new AbortController().signal });
-            console.log("Transaction Signature:", signature);
+            
 
             if (signature) {
               toast({
@@ -112,7 +112,7 @@ export default function InvoiceViewPage() {
               description: `Failed to activate invoice: ${error instanceof Error ? error.message : String(error)}`,
               variant: "destructive",
             });
-            console.error("Transaction error:", error);
+            
           }
         }).catch((error) => {
           toast({
@@ -120,7 +120,7 @@ export default function InvoiceViewPage() {
             description: `Failed to sign invoice: ${error.message}`,
             variant: "destructive",
           });
-          console.error("Signing error:", error);
+          
         });
       }
 

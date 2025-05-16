@@ -24,7 +24,7 @@ export function useFetchTransactions(publicKey: PublicKey | null, connection: Rp
           .send({ abortSignal: new AbortController().signal });
 
         if (!signatures.length) {
-          console.warn("No recent transactions found for this address");
+          
           setTransactions([]);
           return;
         }
@@ -37,7 +37,7 @@ export function useFetchTransactions(publicKey: PublicKey | null, connection: Rp
               .send({ abortSignal: new AbortController().signal });
 
             if (!transaction) {
-              console.warn(`Transaction not found for signature: ${sig.signature}`);
+              
               return null;
             }
 
@@ -56,7 +56,7 @@ export function useFetchTransactions(publicKey: PublicKey | null, connection: Rp
 
         setTransactions(validTransactions);
       } catch (error) {
-        console.error("Failed to fetch transactions:", error);
+        
         toast.error("Failed to fetch transaction history");
       } finally {
         setIsLoading(false);

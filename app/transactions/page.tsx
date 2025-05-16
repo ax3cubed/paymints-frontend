@@ -131,7 +131,7 @@ export default function TransactionsPage() {
 
   const downloadTransactions = (format: string) => {
     // In a real app, this would generate and download a file
-    console.log(`Downloading transactions in ${format} format`)
+    
   }
 
   return (

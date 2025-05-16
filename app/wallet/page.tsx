@@ -79,7 +79,7 @@ export default function WalletPage() {
   }, [swapFromCurrency])
 
   useEffect(() => {
-    console.log("Transactions updated:", transactions)
+    
   }, [transactions,])
   useEffect(() => {
     setSwapToIndex(getTokenIndex(swapFromCurrency))

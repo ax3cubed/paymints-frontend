@@ -73,7 +73,7 @@ export function SolanaProviderInner({ children }: { children: React.ReactNode })
    
       setRpc(solanaRpc)
     } catch (error) {
-      console.error("Failed to initialize Solana RPC:", error)
+      
     }
   }, [cluster.endpoint, mounted])
 
@@ -154,7 +154,7 @@ export function SolanaProviderInner({ children }: { children: React.ReactNode })
       setProvider(provider)
       setAnchorProvider(provider)
     } catch (error) {
-      console.error("Failed to initialize Anchor provider:", error)
+      
       setAnchorProvider(null)
     }
   }, [wallet, publicKey, signTransaction, signAllTransactions, cluster, mounted, rpc])

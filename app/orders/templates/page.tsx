@@ -108,7 +108,7 @@ export default function OrderTemplatesPage() {
 
   const handleSubmit = () => {
     // In a real app, this would create the order and redirect to it
-    console.log("Form submitted:", formData)
+    
     setIsCreateOpen(false)
     setCurrentStep(1)
     router.push("/orders")

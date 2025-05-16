@@ -48,7 +48,7 @@ export function InvoiceView({ invoice, isActive }: InvoiceViewProps) {
   const qrRef = useRef<SVGSVGElement | null>(null)
 
 
-  console.log({ isActive, invoice });
+  
   const isInvoiceActive = isActive || invoice.invoiceStatus === "1"
 
   // Generate a public link for the invoice

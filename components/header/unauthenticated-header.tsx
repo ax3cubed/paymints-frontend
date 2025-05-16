@@ -13,7 +13,7 @@ export const UnauthenticatedHeader = () => {
 
     const router = useRouter()
     const handleLaunchApp = () => {
-        console.log(isAuthenticated);
+        
         if (isAuthenticated) {
 
 

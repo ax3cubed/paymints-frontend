@@ -36,7 +36,7 @@ export function WalletConnectButton({ id, className, variant = "outline", ...pro
     if (!address) return ""
     return `${address.slice(0, 4)}...${address.slice(-4)}`
   }
- console.log("WalletConnectButton", { isAuthenticated, walletAddress, isLoading, publicKey });
+ 
  
   if (isLoading) {
     return (
