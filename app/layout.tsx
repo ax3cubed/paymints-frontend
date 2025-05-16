@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Paymint | Web3-Native Payroll & Finance",
     description: "The Future of Work Finance on Solana",
-    url: "https://paymint.app",
+    url: "https://paymints-web3.netlify.app/",
     siteName: "Paymint",
     images: [
       {
-        url: "https://paymint.app/og-image.png",
+        url: "https://paymints-web3.netlify.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Paymint - Web3-Native Payroll & Finance",
@@ -38,14 +38,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Paymint | Web3-Native Payroll & Finance",
     description: "The Future of Work Finance on Solana",
-    images: ["https://paymint.app/og-image.png"],
+    images: ["https://paymints-web3.netlify.app/og-image.png"],
   },
   icons: {
-    icon: "/favicon.svg",
-    apple: "/apple-touch-icon.png",
+    icon: "/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
   },
   themeColor: "#ffffff",
-  manifest: "/site.webmanifest",
   keywords: [
     "paymint",
     "web3 payroll",
