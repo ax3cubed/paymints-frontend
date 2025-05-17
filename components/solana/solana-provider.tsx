@@ -7,6 +7,7 @@ import { AnchorProvider, setProvider } from "@project-serum/anchor"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react"
 import {
+  PhantomWalletAdapter,
   CloverWalletAdapter,
   CoinbaseWalletAdapter,
   LedgerWalletAdapter,
@@ -172,7 +173,7 @@ export function SolanaProvider({ children }: { children: React.ReactNode }) {
 
   const wallets = useMemo(
     () => [
-     
+      new PhantomWalletAdapter(),
       new CloverWalletAdapter(),
       new CoinbaseWalletAdapter(),
       new LedgerWalletAdapter(),
